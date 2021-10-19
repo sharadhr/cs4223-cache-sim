@@ -1,0 +1,75 @@
+CacheFactory (switch between DRAGON and MESI)
+
+Input file -> Instructions (LD/ST)
+
+ProcessorPool
+
+Processor ---------------
+PC -> Cache(L1) -> CoreMonitor
+---------------------------
+
+Cache--------------------
+CacheController -> Array -> Struct CacheLine{ Data, State }
+-------------------------
+
+Bus---------------
+DataStore Queue[] -> BusMonitor
+---------------------
+
+BusMonitor---------
+Struct BusTransactionCounter{BusRdx, BusRd, BusUpd, BusWb} -> InvalidationCounter/Updates 
+  -> Data traffic
+------------------
+
+CoreMonitor---------
+Execution cycle -> Number of LD/ST inst -> Compute Cycles per core -> number of idle cycles
+ -> Cache miss rate 
+------------------
+
+SystemMonitor---------
+BusMonitor -> CoreMonitors
+--------------------
+
+Confirm with prof no. 8
+
+===================
+API
+===================
+main {
+  (processProol: ProcessPool).feed(fileName: )
+  (processProol: ProcessPool).run()
+}
+
+ProcessorPool:
+  processors: Processors[4]
+  feed(filePath="") // setup
+  run()
+
+struct Instruction {
+  label: enum {Load, Store, Other}
+  value: integer
+}
+
+Processor:
+  instructions: Vec<Instruction>
+
+  private pc: integer
+  private inputStream: InstructionStream
+
+  getNextInstruction(): Instruction
+
+  // pipeline functions
+  private execute(inst: Instruction): integer
+  private writeBack(inst: Instruction): integer
+
+  private cache: Cache
+  private coreMonitor: CoreMonitor
+
+  public run(): {
+    pc += execute(inst)
+    pc += writeback(inst)
+  }
+
+Cache:
+  cacheController: CacheController
+  data: Vec<CacheLine>
