@@ -132,11 +132,11 @@ processors[0].cacheController.put(x, 1)
 
 
 =========== Protocol specific (MESI/Dragon)
-Bus:
+BusController<T>:
   private caches: Cache&[]
   busMonitor: BusMonitor
 
-  setStates(cacheline, states)
+  setStates(cacheline, states: T])
     busMonitor.numInvalid += 3;
     busMonitor.numUpdate += 3;
     busMonitor.dataTraffic += cacheLineSize;
@@ -153,8 +153,8 @@ BusMonitor:
 MESICache implements CacheController
 DragonCache implements CacheController
 
-MESIBus:
-DragonBus:
+MESIBus implements BusController
+DragonBus implements BusController
 
 CoreMonitor:
   numOfExecutionCycles
