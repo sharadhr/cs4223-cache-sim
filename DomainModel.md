@@ -1,3 +1,5 @@
+# Domain Model
+```
 CacheFactory (switch between DRAGON and MESI)
 
 Input file -> Instructions (LD/ST)
@@ -30,11 +32,10 @@ SystemMonitor---------
 BusMonitor -> CoreMonitors
 --------------------
 
-Confirm with prof no. 8
+```
 
-===================
-API
-===================
+# API
+```
 main {
   (processProol: ProcessPool).feed(fileName: )
   (processProol: ProcessPool).run()
@@ -158,3 +159,4 @@ DragonBus:
 CoreMonitor:
   numOfExecutionCycles
   numOfComputeCycles
+```
