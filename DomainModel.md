@@ -114,14 +114,18 @@ Processor:
 abstract interface CacheController<Vec<>>:
   private bus: Bus&
 
-  has(address: int32): boolean
-
-  get(address: int32): <T> 
+  private:
+  has(address: int32): 
+  
+  public:
+  get(address: int32): int32 
     check bus in the beginning change state of other caches
+    return number of cycles elapsed
 
-  put(address: int32): <T> 
+  put(address: int32): int32 
     check bus in the beginning change state of other caches
-    bus.setStates(states);
+    bus.setStates(states)
+    return number of cycles elapsed
 
   setBus(bus: Bus&): void
 
