@@ -1,1 +1,1 @@
-add_executable(cache_sim Main.cpp)
+add_executable(coherence Runner.cpp ProcessorPool.cpp Processor.cpp Runner.cpp)
