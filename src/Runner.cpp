@@ -42,6 +42,7 @@ void Runner::printStats(/*std::array<CoreMonitor, 4>& coreMons, CacheSim::BusMon
 void Runner::start() {
   pool.setup(args.benchmark, args.associativity, args.numBlocks, args.blockSize);
   pool.run();
+  //
 }
 
 Runner Runner::createRunner(int argcount, char** argv) {
