@@ -7,7 +7,7 @@
 #include <cstdint>
 
 namespace CacheSim {
-CacheSim::Instruction CacheSim::Processor::getNextInstruction() {
+Instruction Processor::getNextInstruction() {
   int readType;
   uint32_t value;
 
@@ -16,7 +16,7 @@ CacheSim::Instruction CacheSim::Processor::getNextInstruction() {
   return {static_cast<Instruction::InstructionType>(readType), value};
 }
 
-uint32_t CacheSim::Processor::runNextInstruction() {
+uint32_t Processor::runNextInstruction() {
   if (!instructionStream.eof()) {
     auto nextInstruction = getNextInstruction();
     switch (nextInstruction.type) {
@@ -33,18 +33,18 @@ uint32_t CacheSim::Processor::runNextInstruction() {
   return 0;
 }
 
-uint32_t CacheSim::Processor::execute(const Instruction& otherInst) {
+uint32_t Processor::execute(const Instruction& otherInst) {
   pc += otherInst.value;
   return otherInst.value;
 }
 
-uint32_t CacheSim::Processor::readFrom(const Instruction& readInst) {
+uint32_t Processor::readFrom(const Instruction& readInst) {
   // auto cycles = cache.get(readInst.value);
   // pc += cycles;
   return 1;
 }
 
-uint32_t CacheSim::Processor::writeBack(const Instruction& writeInst) {
+uint32_t Processor::writeBack(const Instruction& writeInst) {
   // auto cycles = cache.put(writeInst.value);
   // pc += cycles;
   return 1;

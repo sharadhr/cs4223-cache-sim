@@ -21,8 +21,9 @@ class Processor {
  public:
   uint32_t pc{};
   Processor() = default;
-  Processor(std::string_view filePath, int pid, uint32_t associativity, uint32_t numBlocks, uint32_t blockSize) : pid{static_cast<uint8_t>(pid)},
-                                                                                                                  instructionStream(filePath.data()) {}
+  Processor(std::string_view filePath, uint8_t pid, uint32_t associativity, uint32_t numBlocks,
+            uint32_t blockSize) : pid{pid},
+                                  instructionStream(filePath.data()) {}
   // cache(associativity, numBlocks, blockSize),
   // monitor() {}
   uint32_t runNextInstruction();

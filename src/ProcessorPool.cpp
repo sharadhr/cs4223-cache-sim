@@ -4,6 +4,7 @@
 
 #include "ProcessorPool.hpp"
 
+#include <cstdint>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -13,14 +14,15 @@ void ProcessorPool::setup(const std::filesystem::path& benchmark, uint16_t assoc
   if (benchmark.empty())
     throw std::domain_error("Benchmark file name is empty.");
 
-  int pid = 0;
+  uint8_t pid = 0;
   for (auto& processor : processors) {
     auto coreBenchmarkFile = benchmark;
     coreBenchmarkFile += "_" + std::to_string(pid);
     coreBenchmarkFile.replace_extension("data");
 
     if (!std::filesystem::exists(coreBenchmarkFile))
-      throw std::domain_error(coreBenchmarkFile.native() + " does not exist in working directory.");
+      throw std::domain_error(coreBenchmarkFile.native() + " does not exist in working directory: "
+                              + std::filesystem::current_path().native());
 
     processor = Processor(coreBenchmarkFile.native(), pid++, associativity, numBlocks, blockSize);
   }

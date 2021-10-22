@@ -1,1 +1,1 @@
-add_executable(coherence Runner.cpp ProcessorPool.cpp Processor.cpp Runner.cpp)
+add_executable(coherence Runner.cpp ProcessorPool.cpp Processor.cpp Runner.cpp CoreMonitor.cpp)
