@@ -74,9 +74,14 @@ void Runner::checkArguments(int argc, char* argv[]) {
 }// namespace CacheSim
 
 int main(int argc, char* argv[]) {
-  auto runner = CacheSim::Runner::createRunner(argc, argv);
-  runner.printConfig();
-  runner.start();
-  runner.printStats();
-  return 0;
+  try {
+    auto runner = CacheSim::Runner::createRunner(argc, argv);
+    runner.printConfig();
+    runner.start();
+    runner.printStats();
+    return 0;
+  } catch (const std::exception& e) {
+    std::cerr << e.what() << std::endl;
+    return 1;
+  }
 }

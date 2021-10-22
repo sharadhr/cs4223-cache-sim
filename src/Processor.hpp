@@ -5,12 +5,14 @@
 #ifndef CS4223_CACHE_SIM_PROCESSOR_HPP
 #define CS4223_CACHE_SIM_PROCESSOR_HPP
 
+#include <stdint.h>
 #include <cstdint>
 #include <fstream>
+#include <string_view>
 
 namespace CacheSim {
 struct Instruction {
-  enum InstructionType { LD = 0,
+  enum class InstructionType { LD = 0,
                          ST = 1,
                          ALU = 2 };
   InstructionType type;
@@ -21,9 +23,9 @@ class Processor {
  public:
   uint32_t pc{};
   Processor() = default;
-  Processor(std::string_view filePath, uint8_t pid, uint32_t associativity, uint32_t numBlocks,
+  Processor(const std::string& filePath, uint8_t pid, uint16_t associativity, uint16_t numBlocks,
             uint32_t blockSize) : pid{pid},
-                                  instructionStream(filePath.data()) {}
+                                  instructionStream(filePath) {}
   // cache(associativity, numBlocks, blockSize),
   // monitor() {}
   uint32_t runNextInstruction();
@@ -35,10 +37,9 @@ class Processor {
   // CacheSim::CacheController cache;
   // CacheSim::CoreMonitor monitor;
 
-  Instruction getNextInstruction();
-  uint32_t execute(const Instruction& otherInst);
-  uint32_t readFrom(const Instruction& readInst);
-  uint32_t writeBack(const Instruction& writeInst);
+  uint16_t execute(const Instruction& otherInst);
+  uint16_t readFrom(const Instruction& readInst);
+  uint16_t writeBack(const Instruction& writeInst);
 };
 }// namespace CacheSim
 
