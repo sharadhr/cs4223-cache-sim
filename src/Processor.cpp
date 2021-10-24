@@ -3,9 +3,6 @@
 //
 
 #include "Processor.hpp"
-#include <stdint.h>
-
-#include <cstdint>
 
 namespace CacheSim {
 uint32_t Processor::runNextInstruction() {
@@ -29,19 +26,22 @@ uint32_t Processor::runNextInstruction() {
 }
 
 uint16_t Processor::execute(const Instruction& otherInst) {
-  pc += otherInst.value;
-  return static_cast<uint16_t>(otherInst.value);
+  pc += 1;
+  return 1;
+  // return static_cast<uint16_t>(otherInst.value);
 }
 
 uint16_t Processor::readFrom(const Instruction& readInst) {
   // auto cycles = cache.get(readInst.value);
   // pc += cycles;
+  pc += 1;
   return 1;
 }
 
 uint16_t Processor::writeBack(const Instruction& writeInst) {
   // auto cycles = cache.put(writeInst.value);
   // pc += cycles;
+  pc += 1;
   return 1;
 }
 }// namespace CacheSim

@@ -59,9 +59,9 @@ void Runner::checkArguments(int argc, char* argv[]) {
     throw std::domain_error("More than 5 arguments were provided. Exiting.");
 
   std::vector<std::string> arguments(argv, argc + argv);
-  if ((arguments[1] != std::string("MESI")) == (arguments[1] != std::string("Dragon")))
+  if ((arguments[1] != "MESI") == (arguments[1] != "Dragon"))
     throw std::domain_error(R"(Protocol must be either "MESI" or "Dragon", but ")"
-                            + arguments[1] + R"(" was provided instead. Exiting.)");
+                            + arguments[1] + R"(" was provided instead.)");
 
   if (std::stoi(arguments[3]) % 4 != 0)
     throw std::domain_error("Cache size must be integer multiple of word size (4 B). Provided value was "

@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 
@@ -21,10 +22,10 @@ void ProcessorPool::setup(const std::filesystem::path& benchmark, uint16_t assoc
     coreBenchmarkFile.replace_extension("data");
 
     if (!std::filesystem::exists(coreBenchmarkFile))
-      throw std::domain_error(coreBenchmarkFile.string() + " does not exist in working directory: "
-                              + std::filesystem::current_path().string());
+      throw std::domain_error(coreBenchmarkFile.make_preferred().string() + " does not exist in working directory: "
+                              + std::filesystem::current_path().make_preferred().string());
 
-    processor = Processor(coreBenchmarkFile.string(), pid++, associativity, numBlocks, blockSize);
+    processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize);
   }
 }
 
