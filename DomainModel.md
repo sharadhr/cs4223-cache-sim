@@ -46,34 +46,10 @@ ProcessorPool:
   feed(filePath="") // setup
   run() {
     while (true) {
-      if (blockCycles1 == 0) {
-        blockCycles1 = procsesors[0].run1Inst(bus)
-      }
-
-      if (blockCycles2 == 0) {
-        blockCycles2 = procsesors[1].run1Inst()
-      }
-
-      if (blockCycles3 == 0) {
-        blockCycles3 = procsesors[2].run1Inst()
-      }
-
-      if (blockCycles4 == 0) {
-        blockCycles4 = procsesors[3].run1Inst()
-      }
-
-      if (blockCycle1 == -1 && 
-        blockCycle2 == -1 && 
-        blockCycle3 == -1 && 
-        blockCycle4 == -1) {
-        break;
-      }
-
-      blockCycles1--;
-      blockCycles2--;
-      blockCycles3--;
-      blockCycles4--;
-
+      blockCycles1 = procsesors[0].runOneCycle(bus)
+      blockCycles2 = procsesors[1].runOneCycle()
+      blockCycles3 = procsesors[2].runOneCycle()
+      blockCycles4 = procsesors[3].runOneCycle()
     }
     cleanUp()
   }
@@ -98,6 +74,8 @@ Processor:
 
   getNextInstruction(): Instruction
 
+  pipelineState: PipelineState
+
   // pipeline functions
   private execute(inst: Instruction): integer
   private writeBack(inst: Instruction): integer
@@ -106,9 +84,18 @@ Processor:
   private coreMonitor: CoreMonitor
 
   private currentInst: Instruction
-  public run1Inst(): int {
-    pc += execute(inst)
-    pc += writeback(inst)
+
+  private done: boolean
+
+  public runOneCycle(): int {
+    auto exit = pipelineState.update();
+    if (exit) {
+      this.currentInst = getNextInstruction();
+    }
+
+    if (currentInst.type == DONE) {
+      this.done = true;
+    }
   }
 
 abstract interface CacheController<Vec<>>:
@@ -163,4 +150,10 @@ DragonBus implements BusController
 CoreMonitor:
   numOfExecutionCycles
   numOfComputeCycles
+```
+
+## Assumptions:
+```
+1. Decode and issue is instant
+2. No pipelining
 ```
