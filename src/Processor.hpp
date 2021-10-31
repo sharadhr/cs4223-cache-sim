@@ -6,19 +6,31 @@
 #define CS4223_CACHE_SIM_PROCESSOR_HPP
 
 #include <cstdint>
-#include <sstream>
 #include <fstream>
+#include <sstream>
 
 namespace CacheSim {
 struct Instruction {
   enum class InstructionType { LD = 0,
-                         ST = 1,
-                         ALU = 2 };
+                               ST = 1,
+                               ALU = 2 };
   InstructionType type;
   uint32_t value;
 };
 
 class Processor {
+
+  struct PipelineState {
+    Instruction instruction;
+    uint32_t cycles;
+
+
+
+    uint32_t update(){
+      return 0;
+    }
+  };
+
  public:
   uint32_t pc{};
   Processor() = default;
@@ -28,18 +40,15 @@ class Processor {
   }
   // cache(associativity, numBlocks, blockSize),
   // monitor() {}
-  uint32_t runNextInstruction();
+  uint32_t runOneCycle();
 
  private:
   uint8_t pid{};
 
   std::stringstream instructionStream;
+  PipelineState pipelineState{};
   // CacheSim::CacheController cache;
   // CacheSim::CoreMonitor monitor;
-
-  uint16_t execute(const Instruction& otherInst);
-  uint16_t readFrom(const Instruction& readInst);
-  uint16_t writeBack(const Instruction& writeInst);
 };
 }// namespace CacheSim
 

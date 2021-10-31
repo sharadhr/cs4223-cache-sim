@@ -34,20 +34,11 @@ void ProcessorPool::run() {
   int breaker = 0;
 
   while (true) {
-    for (size_t i = 0; i < processors.size(); ++i) {
-      if (blockedCycles[i] == 0) {
-        auto cycles = processors[i].runNextInstruction();
-        if (cycles == 0) {
-          blockedCycles[i] = UINT16_MAX;
-          --breaker;
-          std::cout << "Processor " << i << " done in " << processors[i].pc << " cycles." << std::endl;
-          continue;
-        }
-        blockedCycles[i] = cycles;
-      }
-      if (blockedCycles[i] != UINT16_MAX) --blockedCycles[i];
+    for (auto& processor : processors) {
+      auto exit = processor.runOneCycle();
+      if (exit) ++breaker;
     }
-    if (breaker == -4) break;
+    if (breaker == processors.size()) break;
   }
 
   // return {processors[0].}
