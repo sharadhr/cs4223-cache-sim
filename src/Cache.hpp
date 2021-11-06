@@ -1,10 +1,7 @@
-#ifndef CS4223_CACHE_SIM_PROCESSOR_HPP
-#define CS4223_CACHE_SIM_PROCESSOR_HPP
+#ifndef CS4223_CACHE_SIM_CACHE_HPP
+#define CS4223_CACHE_SIM_CACHE_HPP
 
 #include <cstdint>
-#include <fstream>
-#include <sstream>
-#include <unordered_map>
 #include <vector>
 
 namespace CacheSim {
@@ -53,4 +50,4 @@ class Cache {
 };
 }// namespace CacheSim
 
-#endif//CS4223_CACHE_SIM_PROCESSOR_HPP
+#endif//CS4223_CACHE_SIM_CACHE_HPP

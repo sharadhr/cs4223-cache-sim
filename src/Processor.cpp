@@ -7,14 +7,16 @@
 namespace CacheSim {
 uint32_t Processor::runOneCycle() {
 
-  auto exit = pipelineState.update();
+  auto exit = false;
 
-  if (exit){
-    int type; uint32_t value;
+  if (exit) {
+    int type;
+    uint32_t value;
 
     if (instructionStream >> type >> std::hex >> value >> std::dec) {
-      pipelineState.instruction = {static_cast<Instruction::InstructionType>(type), value};
-    } else return 1;
+      /* pipelineState.instruction = {static_cast<Instruction::InstructionType>(type), value}; */
+    } else
+      return 1;
   }
   return 0;
 }
