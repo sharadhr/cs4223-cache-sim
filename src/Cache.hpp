@@ -12,7 +12,7 @@ class CacheLine {
  public:
   enum CacheState {
     INVALID,
-    MODIFIED
+    DIRTY
   };
 
   // INVALID, DIRTY

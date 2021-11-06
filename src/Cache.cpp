@@ -15,15 +15,6 @@ void Cache::lruShuffle(uint32_t setNum, uint32_t indexInSet) {
   currentSet.push_back(line);
 }
 
-CacheLine& Cache::get(uint32_t addr) {
-  assert(has(addr));
-  int blockNumber = addr / blockSize;
-  int setNum = blockNumber % totalSets;
-  int indexInSet = getIndexInSet(addr);
-  lruShuffle(setNum, indexInSet);
-  return store[setNum][indexInSet];
-}
-
 int Cache::getInvalidLineFromSet(uint32_t setNum) {
   std::vector<CacheLine>& currentSet = store[setNum];
   for (int num = 0; num < associativity; num++) {
@@ -70,11 +61,20 @@ bool Cache::has(uint32_t addr) {
   return getIndexInSet(addr) != -1;
 }
 
+CacheLine& Cache::get(uint32_t addr) {
+  assert(has(addr));
+  int blockNumber = addr / blockSize;
+  int setNum = blockNumber % totalSets;
+  int indexInSet = getIndexInSet(addr);
+  lruShuffle(setNum, indexInSet);
+  return store[setNum][indexInSet];
+}
+
 void Cache::put(uint32_t addr, CacheLine::CacheState state, int validFrom) {
   assert(!has(addr));
   int blockNumber = addr / blockSize;
   int setNum = blockNumber % totalSets;
   int lineToEvect = getEvictionCandidateFromSet(setNum);
-  store[setNum][lineToEvect] = CacheLine(state, blockNumber);
+  store[setNum][lineToEvect] = CacheLine(state, blockNumber, validFrom);
 }
 }// namespace CacheSim
