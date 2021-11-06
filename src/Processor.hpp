@@ -9,6 +9,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "Cache.hpp"
+
 namespace CacheSim {
 class Core {
   enum CoreState {
@@ -63,13 +65,16 @@ class Processor : public Core {
  public:
   uint32_t pc{};
 
+  Cache cache;
+
   ProcessorMonitor processorMonitor;
 
   Processor() = default;
-  Processor(const std::ifstream& filePathName, uint8_t pid, uint16_t associativity, uint16_t numBlocks,
+  Processor(const std::ifstream& filePathName, uint8_t pid, uint16_t associativity, uint16_t totalSets,
             uint32_t blockSize) : pid{pid} {
     processorMonitor = ProcessorMonitor();
     instructionStream << filePathName.rdbuf();
+    cache = Cache(associativity, totalSets, blockSize);
   }
   // cache(associativity, numBlocks, blockSize),
   // monitor() {}
@@ -79,7 +84,6 @@ class Processor : public Core {
   uint8_t pid{};
 
   std::stringstream instructionStream;
-  // CacheSim::CacheController cache;
   // CacheSim::CoreMonitor monitor;
 };// namespace CacheSim
 }// namespace CacheSim

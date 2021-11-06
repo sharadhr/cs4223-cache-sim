@@ -25,7 +25,7 @@ void ProcessorPool::setup(const std::filesystem::path& benchmark, uint16_t assoc
       throw std::domain_error(coreBenchmarkFile.make_preferred().string() + " does not exist in working directory: "
                               + std::filesystem::current_path().make_preferred().string());
 
-    processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize);
+    processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks / associativity, blockSize);
   }
 }
 

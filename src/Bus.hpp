@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Cache.hpp"
+#include "Processor.hpp"
 
 namespace CacheSim {
 struct BusMonitor {
@@ -26,6 +27,8 @@ class Bus {
   std::unordered_map<int, int> invalidBlock;
   std::unordered_map<int, int> activeBlocks;
 
+  std::vector<Processor>& processors;
+
   int getMemBlockAvailableTime(int blockNum);
   void writeBackMem(int cacheID, int addr);
   void checkMem();
@@ -41,7 +44,8 @@ class Bus {
   virtual void writeHit(int processId, int addr) = 0;
   virtual void writeMiss(int processId, int addr) = 0;
 
-  Bus(int blockSize) : blockSize(blockSize) {
+  Bus(int blockSize, std::vector<Processor>& processors) : blockSize(blockSize),
+                                                           processors(processors) {
     monitor = BusMonitor();
   }
 };
