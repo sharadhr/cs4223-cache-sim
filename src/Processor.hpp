@@ -70,11 +70,11 @@ class Processor : public Core {
   ProcessorMonitor processorMonitor;
 
   Processor() = default;
-  Processor(const std::ifstream& filePathName, uint8_t pid, uint16_t associativity, uint16_t totalSets,
+  Processor(const std::ifstream& filePathName, uint8_t pid, uint16_t associativity, uint16_t numBlocks,
             uint32_t blockSize) : pid{pid} {
     processorMonitor = ProcessorMonitor();
     instructionStream << filePathName.rdbuf();
-    cache = Cache(associativity, totalSets, blockSize);
+    cache = Cache(associativity, numBlocks / associativity, blockSize);
   }
   // cache(associativity, numBlocks, blockSize),
   // monitor() {}
