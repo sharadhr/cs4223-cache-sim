@@ -6,10 +6,32 @@
 #define CS4223_CACHE_SIM_PROCESSOR_HPP
 
 #include <cstdint>
+#include <deque>
 #include <fstream>
 #include <sstream>
 
+#include "Cache.hpp"
+
 namespace CacheSim {
+class Bus;
+class Core {
+ public:
+  enum CoreState {
+    FREE = 0,
+    BUSY = 1,
+    BUSY_WAIT = 2
+  };
+
+  Core() = default;
+
+  CoreState state;
+  int nextFree;
+
+  void setBusy(int nextFree);
+
+  void refresh(int curTime);
+};
+
 struct Instruction {
   enum class InstructionType { LD = 0,
                                ST = 1,
@@ -18,37 +40,49 @@ struct Instruction {
   uint32_t value;
 };
 
-class Processor {
+struct ProcessorMonitor {
+  int lastBusAccess;
+  int execCycles;
+  int compCycles;
+  int idleCycles;
+  int loadCount;
+  int storeCount;
+  int cacheMissCount;
+  int privateAccessCount;
 
-  struct PipelineState {
-    Instruction instruction;
-    uint32_t cycles;
+  ProcessorMonitor() = default;
+};
 
-
-
-    uint32_t update(){
-      return 0;
-    }
-  };
+class Processor : public Core {
 
  public:
   uint32_t pc{};
+  bool isDone();
+
+  Cache cache;
+
+  ProcessorMonitor monitor;
+
+  std::deque<Instruction> instructions;
+
   Processor() = default;
   Processor(const std::ifstream& filePathName, uint8_t pid, uint16_t associativity, uint16_t numBlocks,
             uint32_t blockSize) : pid{pid} {
+    monitor = ProcessorMonitor();
     instructionStream << filePathName.rdbuf();
+    cache = Cache(associativity, numBlocks / associativity, blockSize);
+    loadInstructions();
   }
-  // cache(associativity, numBlocks, blockSize),
-  // monitor() {}
-  uint32_t runOneCycle();
+  void run(int cycles = 1);
+  void issue(Instruction instruction, Bus* bus);
+  bool issue(Instruction instruction, Bus* bus, bool busInUse);
 
  private:
   uint8_t pid{};
 
   std::stringstream instructionStream;
-  PipelineState pipelineState{};
-  // CacheSim::CacheController cache;
-  // CacheSim::CoreMonitor monitor;
+
+  void loadInstructions();
 };
 }// namespace CacheSim
 
