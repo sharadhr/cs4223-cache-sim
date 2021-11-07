@@ -21,6 +21,8 @@ class Bus {
  public:
   BusMonitor monitor;
 
+  bool earlyRet;
+
   int blockSize;
   int curTime;
 
@@ -34,15 +36,16 @@ class Bus {
   void checkMem();
   bool checkReleaseCore();
   bool checkCoreReq();
+  int getHeadAddr(int addr);
 
  public:
   Bus(int cacheSize, int assoc, int blockSize,
       std::vector<std::vector<std::pair<int, int>>> coreTraces);
 
-  virtual void readHit(int processId, int addr) = 0;
-  virtual void readMiss(int processId, int addr) = 0;
-  virtual void writeHit(int processId, int addr) = 0;
-  virtual void writeMiss(int processId, int addr) = 0;
+  virtual void readHit(int processorId, int addr) = 0;
+  virtual void readMiss(int processorId, int addr) = 0;
+  virtual void writeHit(int processorId, int addr) = 0;
+  virtual void writeMiss(int processorId, int addr) = 0;
 
   Bus(int blockSize, std::vector<Processor>& processors) : blockSize(blockSize),
                                                            processors(processors) {
@@ -52,11 +55,12 @@ class Bus {
 
 class MESIBus : Bus {
  public:
-  void invalidate(int processId, int addr);
-  void readHit(int processId, int addr) override;
-  void readMiss(int processId, int addr) override;
-  void writeHit(int processId, int addr) override;
-  void writeMiss(int processId, int addr) override;
+  void invalidate(int cacheID, int addr, bool needWriteBack);
+  void readHit(int processorId, int addr) override;
+  void readMiss(int processorId, int addr) override;
+  void writeHit(int processorId, int addr) override;
+  void writeMiss(int processorId, int addr) override;
+  bool cacheAllocAddr(int cacheID, int addr, CacheLine::CacheState addrState);
 };
 
 class DragonBus : Bus {
@@ -65,9 +69,9 @@ class DragonBus : Bus {
 
   int countOthCacheHold(int cacheID, int addr);
   void cacheReceiveW(int cacheID, int addr, int sendCycle);
-  void cacheReceiveB(int cacheID, int addr, CacheSim::CacheLine state);
+  void cacheReceiveB(int cacheID, int addr, CacheLine::CacheState state);
 
-  int findMemSourceAvailableTime(int cacheID, int addr);
+  int findMemSourceAvailableTime(int addr);
   int findCacheSourceAvailableTime(int cacheID, int addr);
   int findSourceAvailableTime(int cacheID, int addr);
   void broadcastWOthCache(int cacheID, int addr, int sendCycle);

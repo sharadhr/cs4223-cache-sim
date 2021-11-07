@@ -9,7 +9,10 @@ class CacheLine {
  public:
   enum CacheState {
     INVALID,
-    DIRTY
+    DIRTY,
+    EXCLUSIVE,
+    SHARED,
+    SHARED_MODIFIED
   };
 
   // INVALID, DIRTY
@@ -23,12 +26,13 @@ class CacheLine {
 
 class Cache {
  private:
-  void lruShuffle(uint32_t setNum, uint32_t indexInSet);
   int getIndexInSet(uint32_t addr);
   int getInvalidLineFromSet(uint32_t setNum);
   int getEvictionCandidateFromSet(uint32_t setNum);
 
  public:
+  void lruShuffle(uint32_t setNum, uint32_t indexInSet);
+  void lruShuffle(uint32_t addr);
   uint16_t associativity;
   uint16_t totalSets;
   uint16_t blockSize;
@@ -46,7 +50,11 @@ class Cache {
   bool has(uint32_t addr);
   CacheLine& get(uint32_t addr);
   void put(uint32_t addr, CacheLine::CacheState state, int validFrom);
-  void evict(uint32_t addr);
+  CacheLine& evict(uint32_t addr);
+  bool isAddrDirty(uint32_t addr);
+  bool setBlockState(uint32_t addr, CacheLine::CacheState state);
+  CacheLine::CacheState getBlockState(uint32_t addr);
+  int getHeadAddr(CacheLine line);
 };
 }// namespace CacheSim
 
