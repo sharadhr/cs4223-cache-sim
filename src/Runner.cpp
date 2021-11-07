@@ -4,7 +4,6 @@
 
 #include "Runner.hpp"
 
-#include <cctype>
 #include <iostream>
 
 namespace CacheSim {
@@ -42,15 +41,9 @@ void Runner::printConfig() const {
 void Runner::printStats(/*std::array<CoreMonitor, 4>& coreMons, CacheSim::BusMonitor& busMon*/) {}
 
 void Runner::start() {
-  if (args.protocol == "MESI" || args.protocol == "mesi") {
-    pool.setup(Protocol::MESI, args.benchmark, args.associativity, args.numBlocks, args.blockSize);
-  } else if (args.protocol == "Dragon" || args.protocol == "dragon") {
-    pool.setup(Protocol::DRAGON, args.benchmark, args.associativity, args.numBlocks, args.blockSize);
-  } else {
-    return;
-  }
+  pool.setup(args.benchmark, args.associativity, args.numBlocks, args.blockSize);
   pool.run();
-  delete (pool.bus);
+  //
 }
 
 Runner Runner::createRunner(int argcount, char** argv) {

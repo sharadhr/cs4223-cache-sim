@@ -11,7 +11,7 @@
 #include <stdexcept>
 
 namespace CacheSim {
-void ProcessorPool::setup(Protocol protocol, const std::filesystem::path& benchmark, uint16_t associativity, uint16_t numBlocks, uint16_t blockSize) {
+void ProcessorPool::setup(const std::filesystem::path& benchmark, uint16_t associativity, uint16_t numBlocks, uint16_t blockSize) {
   if (benchmark.empty())
     throw std::domain_error("Benchmark file name is empty.");
 
@@ -27,32 +27,20 @@ void ProcessorPool::setup(Protocol protocol, const std::filesystem::path& benchm
 
     processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize);
   }
-
-  switch (protocol) {
-    case MESI:
-      bus = new MESIBus(blockSize, &processors);
-      break;
-    case DRAGON:
-      bus = new DragonBus(blockSize, &processors);
-      break;
-  }
 }
 
-bool ProcessorPool::isDone() {
-  for (int i = 0; i < (int) processors.size(); i++) {
-    if (!processors.at(i).isDone()) {
-      return false;
-    }
-  }
-  return true;
-}
+void ProcessorPool::run() {
+  static std::array<uint16_t, 4> blockedCycles;
+  int breaker = 0;
 
-void ProcessorPool::run(int cycles) {
-  while (!isDone()) {
+  while (true) {
     for (auto& processor : processors) {
-      processor.run(cycles);
+      auto exit = processor.runOneCycle();
+      if (exit) ++breaker;
     }
-    bus->run(cycles);
+    if (breaker == processors.size()) break;
   }
+
+  // return {processors[0].}
 }
 }// namespace CacheSim
