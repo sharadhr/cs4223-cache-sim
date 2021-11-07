@@ -5,19 +5,25 @@
 #include "Processor.hpp"
 
 namespace CacheSim {
-uint32_t Processor::runOneCycle() {
-
-  auto exit = false;
-
-  if (exit) {
-    int type;
-    uint32_t value;
-
-    if (instructionStream >> type >> std::hex >> value >> std::dec) {
-      /* pipelineState.instruction = {static_cast<Instruction::InstructionType>(type), value}; */
-    } else
-      return 1;
+void Processor::run(int cycles) {
+  if (isDone()) {
+    return;
   }
-  return 0;
+  pc += cycles;
+}
+
+bool Processor::isDone() {
+  return state == Core::FREE && instructions.empty();
+}
+
+void Processor::loadInstructions() {
+  int type;
+  uint32_t value;
+  while (true) {
+    if (instructionStream >> type >> std::hex >> value >> std::dec) {
+      instructions.push_back({static_cast<Instruction::InstructionType>(type), value});
+    } else
+      return;
+  }
 }
 }// namespace CacheSim

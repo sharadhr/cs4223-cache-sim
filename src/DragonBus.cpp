@@ -16,7 +16,7 @@ int DragonBus::findCacheSourceAvailableTime(int processorId, int addr) {
     Cache& othCache = processors->at(othCacheID).cache;
     if (othCache.has(addr)) {
       availableTimeFromOth = min(availableTimeFromOth,
-                                 max(othCache.get(addr).validFrom, curTime));
+                                 max(othCache.get(addr).validFrom, curCycle));
     }
   }
   return availableTimeFromOth;
@@ -48,7 +48,7 @@ int DragonBus::countOthCacheHold(int processorId, int addr) {
   return countHold;
 }
 
-void DragonBus::cacheReceiveW(int processorId, int addr, int sendCycle) {
+void DragonBus::cacheReceiveWord(int processorId, int addr, int sendCycle) {
   Cache& cache = processors->at(processorId).cache;
   assert(cache.has(addr));
 
@@ -57,12 +57,12 @@ void DragonBus::cacheReceiveW(int processorId, int addr, int sendCycle) {
   monitor.trafficData += 4;
 }
 
-void DragonBus::cacheReceiveB(int processorId, int addr, CacheLine::CacheState state) {
+void DragonBus::cacheReceiveBlock(int processorId, int addr, CacheLine::CacheState state) {
   Cache& cache = processors->at(processorId).cache;
   assert(!cache.has(addr));
 
-  int cacheAvailableTime = max(findCacheSourceAvailableTime(processorId, addr), curTime);
-  int memAvailableTime = max(findMemSourceAvailableTime(addr), curTime);
+  int cacheAvailableTime = max(findCacheSourceAvailableTime(processorId, addr), curCycle);
+  int memAvailableTime = max(findMemSourceAvailableTime(addr), curCycle);
 
   int availableTime = cacheAvailableTime == -2
       ? memAvailableTime + 100
@@ -76,7 +76,7 @@ void DragonBus::cacheReceiveB(int processorId, int addr, CacheLine::CacheState s
                         && countOthCacheHold(processorId, evictedAddr) == 0);
 
     if (needRewrite) {
-      writeBackMem(processorId, evictedAddr);
+      writeBackMem(evictedAddr);
     }
   }
 
@@ -96,7 +96,7 @@ void DragonBus::broadcastWOthCache(int processorId, int addr, int sendCycle) {
     if (othCacheID == processorId) continue;
     Cache& othCache = processors->at(othCacheID).cache;
     if (othCache.has(addr)) {
-      cacheReceiveW(othCacheID, addr, sendCycle);
+      cacheReceiveWord(othCacheID, addr, sendCycle);
       othCache.setBlockState(addr, CacheLine::SHARED);
 
       monitor.updateCount++;
@@ -127,7 +127,7 @@ void DragonBus::writeHit(int coreID, int addr) {
     auto addrState = (countHold == 0) ? CacheLine::DIRTY : CacheLine::SHARED_MODIFIED;
     if (addrState == CacheLine::SHARED_MODIFIED) {
       // Broadcast the modified word to other caches
-      broadcastWOthCache(processorId, addr, curTime);
+      broadcastWOthCache(processorId, addr, curCycle);
     }
     cache.setBlockState(addr, addrState);
   }
@@ -138,13 +138,13 @@ void DragonBus::writeHit(int coreID, int addr) {
   }
 
   int blockNum = addr / blockSize;
-  invalidBlock[blockNum] = -2;
+  invalidBlocks[blockNum] = -2;
 }
 
 void DragonBus::readMiss(int coreID, int addr) {
   int countHold = countOthCacheHold(coreID, addr);
   auto state = (countHold == 0) ? CacheLine::DIRTY : CacheLine::SHARED;
-  cacheReceiveB(coreID, addr, state);
+  cacheReceiveBlock(coreID, addr, state);
 }
 
 void DragonBus::writeMiss(int coreID, int addr) {
@@ -155,16 +155,23 @@ void DragonBus::writeMiss(int coreID, int addr) {
   auto state = (countHold == 0) ? CacheLine::DIRTY : CacheLine::SHARED_MODIFIED;
 
   if (state == CacheLine::DIRTY) {
-    cacheReceiveB(coreID, addr, CacheLine::DIRTY);
+    cacheReceiveBlock(coreID, addr, CacheLine::DIRTY);
   } else {
-    cacheReceiveB(coreID, addr, CacheLine::SHARED_MODIFIED);
+    cacheReceiveBlock(coreID, addr, CacheLine::SHARED_MODIFIED);
 
     int sendTime = cache.get(addr).validFrom;
     broadcastWOthCache(processorId, addr, sendTime);
   }
 
   int blockNum = addr / blockSize;
-  invalidBlock[blockNum] = -2;
+  invalidBlocks[blockNum] = -2;
+}
+
+void DragonBus::run(int cycles) {
+  for (int i = 0; i < (int) invalidBlocks.size(); i++) {
+    invalidBlocks[i] = max(0, invalidBlocks[i] - cycles);
+  }
+  checkMem();
 }
 
 DragonBus::~DragonBus() {

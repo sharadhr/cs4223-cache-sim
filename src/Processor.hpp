@@ -13,29 +13,20 @@
 
 namespace CacheSim {
 class Core {
+ public:
   enum CoreState {
     FREE = 0,
-    BUSY = 1
+    BUSY = 1,
+    BUSY_WAIT = 2
   };
+
+  Core() = default;
 
   CoreState state;
   int nextFree;
 
-  void setState(int state);
-  void setNextFree(int nextFree);
-
- public:
-  Core() = default;
-
-  void setBusyWait();
   void setBusy(int nextFree);
-  void setFree();
 
-  bool isFree();
-  bool isBusyWait();
-  bool isBusy();
-
-  int getNextFree();
   void refresh(int curTime);
 };
 
@@ -64,10 +55,13 @@ class Processor : public Core {
 
  public:
   uint32_t pc{};
+  bool isDone();
 
   Cache cache;
 
   ProcessorMonitor processorMonitor;
+
+  std::vector<Instruction> instructions;
 
   Processor() = default;
   Processor(const std::ifstream& filePathName, uint8_t pid, uint16_t associativity, uint16_t numBlocks,
@@ -75,17 +69,17 @@ class Processor : public Core {
     processorMonitor = ProcessorMonitor();
     instructionStream << filePathName.rdbuf();
     cache = Cache(associativity, numBlocks / associativity, blockSize);
+    loadInstructions();
   }
-  // cache(associativity, numBlocks, blockSize),
-  // monitor() {}
-  uint32_t runOneCycle();
+  void run(int cycles = 1);
 
  private:
   uint8_t pid{};
 
   std::stringstream instructionStream;
-  // CacheSim::CoreMonitor monitor;
-};// namespace CacheSim
+
+  void loadInstructions();
+};
 }// namespace CacheSim
 
 #endif//CS4223_CACHE_SIM_PROCESSOR_HPP

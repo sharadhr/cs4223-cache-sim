@@ -18,7 +18,8 @@ class ProcessorPool {
   Bus *bus;
 
   void setup(Protocol protocol, const std::filesystem::path &benchmark, uint16_t associativity, uint16_t numBlocks, uint16_t blockSize);
-  void run();
+  void run(int cycles = 1);
+  bool isDone();
 
  private:
   std::array<Processor, 4> processors;

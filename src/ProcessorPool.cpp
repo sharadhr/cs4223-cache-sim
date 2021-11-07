@@ -38,17 +38,21 @@ void ProcessorPool::setup(Protocol protocol, const std::filesystem::path& benchm
   }
 }
 
-void ProcessorPool::run() {
-  int breaker = 0;
-
-  while (true) {
-    for (auto& processor : processors) {
-      auto exit = processor.runOneCycle();
-      if (exit) ++breaker;
+bool ProcessorPool::isDone() {
+  for (int i = 0; i < (int) processors.size(); i++) {
+    if (!processors.at(i).isDone()) {
+      return false;
     }
-    if (breaker == (int) processors.size()) break;
   }
+  return true;
+}
 
-  // return {processors[0].}
+void ProcessorPool::run(int cycles) {
+  while (!isDone()) {
+    for (auto& processor : processors) {
+      processor.run(cycles);
+    }
+    bus->run(cycles);
+  }
 }
 }// namespace CacheSim

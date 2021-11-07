@@ -16,7 +16,7 @@ bool MESIBus::cacheAllocAddr(int processorId, int addr, CacheLine::CacheState ad
   if (evictedEntry.state != CacheLine::INVALID) {
     if (evictedEntry.state == CacheLine::DIRTY) {
       int evictedAddr = cache.getHeadAddr(evictedEntry);
-      writeBackMem(processorId, evictedAddr);
+      writeBackMem(evictedAddr);
     }
   }
 
@@ -32,7 +32,7 @@ void MESIBus::invalidate(int processorId, int addr, bool needWriteBack) {
 
     if (othCache.has(addr)) {
       if (othCache.isAddrDirty(addr) && needWriteBack) {
-        writeBackMem(othCacheID, addr);
+        writeBackMem(addr);
       }
       othCache.setBlockState(addr, CacheLine::INVALID);
       monitor.invalidateCount++;
@@ -55,7 +55,7 @@ void MESIBus::writeHit(int coreID, int addr) {
   invalidate(processorId, addr, false);
 
   int blockNum = addr / blockSize;
-  invalidBlock[blockNum] = -2;
+  invalidBlocks[blockNum] = -2;
 }
 
 void MESIBus::readMiss(int coreID, int addr) {
@@ -67,7 +67,7 @@ void MESIBus::readMiss(int coreID, int addr) {
     Cache& othCache = processors->at(othCacheID).cache;
     if (othCache.has(addr)) {
       if (othCache.isAddrDirty(addr)) {
-        writeBackMem(othCacheID, addr);
+        writeBackMem(addr);
         othCache.setBlockState(addr, CacheLine::SHARED);
       }
     }
@@ -93,9 +93,16 @@ void MESIBus::writeMiss(int coreID, int addr) {
   invalidate(processorId, addr, true);
   cacheAllocAddr(processorId, addr, CacheLine::DIRTY);
   int blockNum = addr / blockSize;
-  invalidBlock[blockNum] = -2;
+  invalidBlocks[blockNum] = -2;
 
   monitor.trafficData += blockSize;
+}
+
+void MESIBus::run(int cycles) {
+  for (int i = 0; i < (int) invalidBlocks.size(); i++) {
+    invalidBlocks[i] = max(0, invalidBlocks[i] - cycles);
+  }
+  checkMem();
 }
 
 MESIBus::~MESIBus() {

@@ -29,15 +29,15 @@ class Bus {
   bool earlyRet;
 
   int blockSize;
-  int curTime;
+  int curCycle;
 
-  std::unordered_map<int, int> invalidBlock;
+  std::unordered_map<int, int> invalidBlocks;
   std::unordered_map<int, int> activeBlocks;
 
   std::array<Processor, 4>* processors;
 
   int getMemBlockAvailableTime(int blockNum);
-  void writeBackMem(int cacheID, int addr);
+  void writeBackMem(int addr);
   void checkMem();
   bool checkReleaseCore();
   bool checkCoreReq();
@@ -50,6 +50,7 @@ class Bus {
   virtual void readMiss(int processorId, int addr) = 0;
   virtual void writeHit(int processorId, int addr) = 0;
   virtual void writeMiss(int processorId, int addr) = 0;
+  virtual void run(int cycles = 1) = 0;
   virtual ~Bus();
 };
 
@@ -62,6 +63,7 @@ class MESIBus : public Bus {
   void writeHit(int processorId, int addr) override;
   void writeMiss(int processorId, int addr) override;
   bool cacheAllocAddr(int cacheID, int addr, CacheLine::CacheState addrState);
+  void run(int cycles = 1) override;
   ~MESIBus();
 };
 
@@ -70,8 +72,8 @@ class DragonBus : public Bus {
   std::unordered_map<int, int> broadcastingBlocks;
 
   int countOthCacheHold(int cacheID, int addr);
-  void cacheReceiveW(int cacheID, int addr, int sendCycle);
-  void cacheReceiveB(int cacheID, int addr, CacheLine::CacheState state);
+  void cacheReceiveWord(int cacheID, int addr, int sendCycle);
+  void cacheReceiveBlock(int cacheID, int addr, CacheLine::CacheState state);
 
   int findMemSourceAvailableTime(int addr);
   int findCacheSourceAvailableTime(int cacheID, int addr);
@@ -82,6 +84,7 @@ class DragonBus : public Bus {
   void writeHit(int coreID, int addr) override;
   void readMiss(int coreID, int addr) override;
   void writeMiss(int coreID, int addr) override;
+  void run(int cycles = 1) override;
 
   DragonBus(int blockSize, std::array<Processor, 4>* processors) : Bus(blockSize, processors) {}
   ~DragonBus();
