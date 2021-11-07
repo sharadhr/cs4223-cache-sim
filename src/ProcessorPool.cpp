@@ -11,7 +11,7 @@
 #include <stdexcept>
 
 namespace CacheSim {
-void ProcessorPool::setup(const std::filesystem::path& benchmark, uint16_t associativity, uint16_t numBlocks, uint16_t blockSize) {
+void ProcessorPool::setup(Protocol protocol, const std::filesystem::path& benchmark, uint16_t associativity, uint16_t numBlocks, uint16_t blockSize) {
   if (benchmark.empty())
     throw std::domain_error("Benchmark file name is empty.");
 
@@ -27,10 +27,18 @@ void ProcessorPool::setup(const std::filesystem::path& benchmark, uint16_t assoc
 
     processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize);
   }
+
+  switch (protocol) {
+    case MESI:
+      bus = new MESIBus(blockSize, &processors);
+      break;
+    case DRAGON:
+      bus = new DragonBus(blockSize, &processors);
+      break;
+  }
 }
 
 void ProcessorPool::run() {
-  static std::array<uint16_t, 4> blockedCycles;
   int breaker = 0;
 
   while (true) {
@@ -38,7 +46,7 @@ void ProcessorPool::run() {
       auto exit = processor.runOneCycle();
       if (exit) ++breaker;
     }
-    if (breaker == processors.size()) break;
+    if (breaker == (int) processors.size()) break;
   }
 
   // return {processors[0].}

@@ -8,6 +8,10 @@
 using namespace std;
 
 namespace CacheSim {
+Bus::Bus(int blockSize, std::array<Processor, 4>* processors) : blockSize(blockSize),
+                                                                processors(processors) {
+}
+
 int Bus::getMemBlockAvailableTime(int blockNum) {
   auto ite = invalidBlock.find(blockNum);
   if (ite == invalidBlock.end()) {
@@ -19,7 +23,7 @@ int Bus::getMemBlockAvailableTime(int blockNum) {
 }
 
 void Bus::writeBackMem(int processorId, int addr) {
-  Cache& cache = processors[processorId].cache;
+  Cache& cache = processors->at(processorId).cache;
   int blockNum = addr / cache.blockSize;
   assert(invalidBlock[blockNum] == -2);
   invalidBlock[blockNum] = curTime + 100;
@@ -40,6 +44,10 @@ void Bus::checkMem() {
 }
 
 int Bus::getHeadAddr(int addr) {
-    return (addr / blockSize) * blockSize;
+  return (addr / blockSize) * blockSize;
+}
+
+Bus::~Bus() {
+  delete (processors);
 }
 }// namespace CacheSim

@@ -8,12 +8,12 @@
 using namespace std;
 
 namespace CacheSim {
-int DragonBus::findCacheSourceAvailableTime(int cacheID, int addr) {
+int DragonBus::findCacheSourceAvailableTime(int processorId, int addr) {
   int availableTimeFromOth = -2;
 
-  for (int othCacheID = 0; othCacheID < (int) processors.size(); othCacheID++) {
-    if (othCacheID == cacheID) continue;
-    Cache& othCache = processors[othCacheID].cache;
+  for (int othCacheID = 0; othCacheID < (int) processors->size(); othCacheID++) {
+    if (othCacheID == processorId) continue;
+    Cache& othCache = processors->at(othCacheID).cache;
     if (othCache.has(addr)) {
       availableTimeFromOth = min(availableTimeFromOth,
                                  max(othCache.get(addr).validFrom, curTime));
@@ -29,18 +29,18 @@ int DragonBus::findMemSourceAvailableTime(int addr) {
   return availableTimeFromMem;
 }
 
-int DragonBus::findSourceAvailableTime(int cacheID, int addr) {
+int DragonBus::findSourceAvailableTime(int processorId, int addr) {
   int availableTimeFromMem = findMemSourceAvailableTime(addr);
-  int availableTimeFromCache = findCacheSourceAvailableTime(cacheID, addr);
+  int availableTimeFromCache = findCacheSourceAvailableTime(processorId, addr);
   return min(availableTimeFromMem + 100,
              availableTimeFromCache + 2 * blockSize / 4);
 }
 
-int DragonBus::countOthCacheHold(int cacheID, int addr) {
+int DragonBus::countOthCacheHold(int processorId, int addr) {
   int countHold = 0;
-  for (int othCacheID = 0; othCacheID < (int) processors.size(); othCacheID++) {
-    if (othCacheID == cacheID) continue;
-    Cache& othCache = processors[othCacheID].cache;
+  for (int othCacheID = 0; othCacheID < (int) processors->size(); othCacheID++) {
+    if (othCacheID == processorId) continue;
+    Cache& othCache = processors->at(othCacheID).cache;
     if (othCache.has(addr)) {
       countHold++;
     }
@@ -48,8 +48,8 @@ int DragonBus::countOthCacheHold(int cacheID, int addr) {
   return countHold;
 }
 
-void DragonBus::cacheReceiveW(int cacheID, int addr, int sendCycle) {
-  Cache& cache = processors[cacheID].cache;
+void DragonBus::cacheReceiveW(int processorId, int addr, int sendCycle) {
+  Cache& cache = processors->at(processorId).cache;
   assert(cache.has(addr));
 
   cache.get(addr).validFrom = sendCycle + 2;
@@ -57,11 +57,11 @@ void DragonBus::cacheReceiveW(int cacheID, int addr, int sendCycle) {
   monitor.trafficData += 4;
 }
 
-void DragonBus::cacheReceiveB(int cacheID, int addr, CacheLine::CacheState state) {
-  Cache& cache = processors[cacheID].cache;
+void DragonBus::cacheReceiveB(int processorId, int addr, CacheLine::CacheState state) {
+  Cache& cache = processors->at(processorId).cache;
   assert(!cache.has(addr));
 
-  int cacheAvailableTime = max(findCacheSourceAvailableTime(cacheID, addr), curTime);
+  int cacheAvailableTime = max(findCacheSourceAvailableTime(processorId, addr), curTime);
   int memAvailableTime = max(findMemSourceAvailableTime(addr), curTime);
 
   int availableTime = cacheAvailableTime == -2
@@ -73,10 +73,10 @@ void DragonBus::cacheReceiveB(int cacheID, int addr, CacheLine::CacheState state
     int evictedAddr = cache.getHeadAddr(evictedEntry);
     int evictedBlockNum = evictedAddr / blockSize;
     bool needRewrite = (getMemBlockAvailableTime(evictedBlockNum) == -2
-                        && countOthCacheHold(cacheID, evictedAddr) == 0);
+                        && countOthCacheHold(processorId, evictedAddr) == 0);
 
     if (needRewrite) {
-      writeBackMem(cacheID, evictedAddr);
+      writeBackMem(processorId, evictedAddr);
     }
   }
 
@@ -86,15 +86,15 @@ void DragonBus::cacheReceiveB(int cacheID, int addr, CacheLine::CacheState state
   monitor.invalidateCount += blockSize;
 }
 
-void DragonBus::broadcastWOthCache(int cacheID, int addr, int sendCycle) {
-  int countHold = countOthCacheHold(cacheID, addr);
+void DragonBus::broadcastWOthCache(int processorId, int addr, int sendCycle) {
+  int countHold = countOthCacheHold(processorId, addr);
   int headAddr = getHeadAddr(addr);
   assert(countHold > 0);
   broadcastingBlocks[headAddr] = sendCycle + 2;
 
-  for (int othCacheID = 0; othCacheID < (int) processors.size(); othCacheID++) {
-    if (othCacheID == cacheID) continue;
-    Cache& othCache = processors[othCacheID].cache;
+  for (int othCacheID = 0; othCacheID < (int) processors->size(); othCacheID++) {
+    if (othCacheID == processorId) continue;
+    Cache& othCache = processors->at(othCacheID).cache;
     if (othCache.has(addr)) {
       cacheReceiveW(othCacheID, addr, sendCycle);
       othCache.setBlockState(addr, CacheLine::SHARED);
@@ -105,7 +105,7 @@ void DragonBus::broadcastWOthCache(int cacheID, int addr, int sendCycle) {
 }
 
 void DragonBus::readHit(int coreID, int addr) {
-  Cache& cache = processors[coreID].cache;
+  Cache& cache = processors->at(coreID).cache;
   cache.lruShuffle(addr);
 }
 
@@ -115,8 +115,8 @@ void DragonBus::writeHit(int coreID, int addr) {
     return;
   }
 
-  int cacheID = coreID;
-  Cache& cache = processors[coreID].cache;
+  int processorId = coreID;
+  Cache& cache = processors->at(coreID).cache;
   auto state = cache.getBlockState(addr);
   cache.lruShuffle(addr);
 
@@ -127,7 +127,7 @@ void DragonBus::writeHit(int coreID, int addr) {
     auto addrState = (countHold == 0) ? CacheLine::DIRTY : CacheLine::SHARED_MODIFIED;
     if (addrState == CacheLine::SHARED_MODIFIED) {
       // Broadcast the modified word to other caches
-      broadcastWOthCache(cacheID, addr, curTime);
+      broadcastWOthCache(processorId, addr, curTime);
     }
     cache.setBlockState(addr, addrState);
   }
@@ -148,8 +148,8 @@ void DragonBus::readMiss(int coreID, int addr) {
 }
 
 void DragonBus::writeMiss(int coreID, int addr) {
-  int cacheID = coreID;
-  Cache& cache = processors[coreID].cache;
+  int processorId = coreID;
+  Cache& cache = processors->at(coreID).cache;
   int countHold = countOthCacheHold(coreID, addr);
 
   auto state = (countHold == 0) ? CacheLine::DIRTY : CacheLine::SHARED_MODIFIED;
@@ -160,10 +160,14 @@ void DragonBus::writeMiss(int coreID, int addr) {
     cacheReceiveB(coreID, addr, CacheLine::SHARED_MODIFIED);
 
     int sendTime = cache.get(addr).validFrom;
-    broadcastWOthCache(cacheID, addr, sendTime);
+    broadcastWOthCache(processorId, addr, sendTime);
   }
 
   int blockNum = addr / blockSize;
   invalidBlock[blockNum] = -2;
+}
+
+DragonBus::~DragonBus() {
+  delete (processors);
 }
 }// namespace CacheSim
