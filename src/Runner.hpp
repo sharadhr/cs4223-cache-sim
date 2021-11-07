@@ -15,7 +15,7 @@
 namespace CacheSim {
 class Runner {
   struct Arguments {
-    std::string protocol{"MESI"};
+    std::string_view protocol{"MESI"};
     std::filesystem::path benchmark{"data/bodytrack"};
     uint32_t cacheSize{4096};
     uint16_t associativity{2};
@@ -32,8 +32,7 @@ class Runner {
   static void printStats();
   static Runner createRunner(int argcount, char* argv[]);
 
-  Runner(int argc, char* argv[]) : argc(argc),
-                                   args() {
+  Runner(int argc, char* argv[]) : argc(argc), args() {
     if (argc == 6) {
       args = {argv[1],
               std::filesystem::path("data") / argv[2],
