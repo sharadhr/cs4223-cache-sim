@@ -46,6 +46,39 @@ int Bus::getHeadAddr(int addr) {
   return (addr / blockSize) * blockSize;
 }
 
+bool sortCores(const pair<int, pair<int, int>>& a, const pair<int, pair<int, int>>& b) {
+  if (a.first == b.first) {
+    return a.second.first < b.second.first;
+  }
+  return a.first < b.first;
+}
+
+void Bus::checkCoreReq() {
+  bool busInUse = false;
+
+  vector<pair<int, pair<int, int>>> coreOrder;
+  for (int coreID = 0; coreID < (int) processors->size(); coreID++) {
+    Processor& core = processors->at(coreID);
+    if (core.isDone()) continue;
+    if (core.state != Core::FREE) continue;
+    coreOrder.push_back(make_pair(core.nextFree,
+                                  make_pair(core.monitor.lastBusAccess, coreID)));
+  }
+
+  sort(coreOrder.begin(), coreOrder.end(), sortCores);
+
+  for (auto i : coreOrder) {
+    int coreID = i.second.second;
+    Processor& core = processors->at(coreID);
+
+    assert(!core.isDone());
+    assert(core.state == Core::FREE);
+
+    auto instruction = core.instructions.front();
+    busInUse = core.issue(instruction, this, busInUse);
+  }
+}
+
 Bus::~Bus() {
   delete (processors);
 }

@@ -29,10 +29,6 @@ class Bus {
   bool earlyRet;
 
   int blockSize;
-  int curCycle;
-
-  std::unordered_map<int, int> invalidBlocks;
-  std::unordered_map<int, int> activeBlocks;
 
   std::array<Processor, 4>* processors;
 
@@ -40,10 +36,14 @@ class Bus {
   void writeBackMem(int addr);
   void checkMem();
   bool checkReleaseCore();
-  bool checkCoreReq();
-  int getHeadAddr(int addr);
+  void checkCoreReq();
 
  public:
+  int curCycle;
+  std::unordered_map<int, int> invalidBlocks;
+  std::unordered_map<int, int> blocksUnderRequest;
+  int getHeadAddr(int addr);
+
   Bus(int blockSize, std::array<Processor, 4>* processors);
 
   virtual void readHit(int processorId, int addr) = 0;

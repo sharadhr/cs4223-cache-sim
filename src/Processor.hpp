@@ -6,12 +6,14 @@
 #define CS4223_CACHE_SIM_PROCESSOR_HPP
 
 #include <cstdint>
+#include <deque>
 #include <fstream>
 #include <sstream>
 
 #include "Cache.hpp"
 
 namespace CacheSim {
+class Bus;
 class Core {
  public:
   enum CoreState {
@@ -59,19 +61,21 @@ class Processor : public Core {
 
   Cache cache;
 
-  ProcessorMonitor processorMonitor;
+  ProcessorMonitor monitor;
 
-  std::vector<Instruction> instructions;
+  std::deque<Instruction> instructions;
 
   Processor() = default;
   Processor(const std::ifstream& filePathName, uint8_t pid, uint16_t associativity, uint16_t numBlocks,
             uint32_t blockSize) : pid{pid} {
-    processorMonitor = ProcessorMonitor();
+    monitor = ProcessorMonitor();
     instructionStream << filePathName.rdbuf();
     cache = Cache(associativity, numBlocks / associativity, blockSize);
     loadInstructions();
   }
   void run(int cycles = 1);
+  void issue(Instruction instruction, Bus* bus);
+  bool issue(Instruction instruction, Bus* bus, bool busInUse);
 
  private:
   uint8_t pid{};

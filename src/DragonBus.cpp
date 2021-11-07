@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Bus.hpp"
+#include "Processor.hpp"
 
 using namespace std;
 
