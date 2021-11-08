@@ -7,19 +7,14 @@
 #include "Bus.hpp"
 
 namespace CacheSim {
-class CacheLock {
- public:
-  bool isLocked;
-  uint32_t blockedUntil;
-  uint32_t blockedOnAdress;
-};
-
 class CacheLine {
  public:
   enum CacheState {
+    MODIFIED,
+    SHARED,
+    SHARED_MODIFIED,
     INVALID,
-    DIRTY,
-    EXCLUSIVE
+    EXCLUSIVE,
   };
   CacheState state;
   uint32_t blockId;
@@ -29,6 +24,14 @@ class CacheLine {
                                                   isEmpty(false) {}
   CacheLine() : isEmpty(true) {}
 };
+
+struct CacheLock {
+  bool isLocked;
+  uint32_t blockedUntil;
+  uint32_t blockedOnAdress;
+  CacheLine line;
+};
+
 class Cache : public CacheLock {
  public:
   Bus& bus;
@@ -37,12 +40,15 @@ class Cache : public CacheLock {
   uint32_t totalSets{64};
   uint32_t associativity{2};
   std::vector<std::vector<CacheLine>> store;
-  bool has(uint32_t addr);
-  bool put(uint32_t addr);
-  bool get(uint32_t);
-  bool evict(uint32_t);
-  bool memWriteBack();
-  bool memRead();
+  void has(uint32_t addr);
+  void put(uint32_t addr);
+  void get(uint32_t);
+  void evict(uint32_t);
+  void memWriteBack();
+  void memRead();
+
+  void lruShuffle(uint32_t setNum, uint32_t blockNum);
+  void lruShuffle(uint32_t addr);
   Cache(Bus& bus, uint32_t associativity, uint32_t totalSets, uint32_t blockSize) : bus(bus),
                                                                                     blockSize(blockSize),
                                                                                     totalSets(totalSets),

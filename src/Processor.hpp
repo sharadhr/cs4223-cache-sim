@@ -19,20 +19,9 @@ struct Instruction {
 };
 
 class Processor {
-
-  struct PipelineState {
-    Instruction instruction;
-    uint32_t cycles;
-
-
-
-    uint32_t update(){
-      return 0;
-    }
-  };
-
  public:
   uint32_t pc{};
+
   Processor() = default;
   Processor(const std::ifstream& filePathName, uint8_t pid, uint16_t associativity, uint16_t numBlocks,
             uint32_t blockSize) : pid{pid} {
@@ -46,7 +35,6 @@ class Processor {
   uint8_t pid{};
 
   std::stringstream instructionStream;
-  PipelineState pipelineState{};
   // CacheSim::CacheController cache;
   // CacheSim::CoreMonitor monitor;
 };
