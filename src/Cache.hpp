@@ -2,10 +2,18 @@
 #define CS4223_CACHE_SIM_CACHE_HPP
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 namespace CacheSim {
 class Bus;
+
+enum CacheOp {
+  PR_RD_HIT,
+  PR_WR_HIT,
+  PR_RD_MISS,
+  PR_WR_MISS
+};
 
 class CacheLine {
  public:
@@ -19,8 +27,8 @@ class CacheLine {
   CacheState state;
   uint32_t blockNum;
   bool isEmpty;
-  CacheLine(uint32_t blockNum, CacheState state) : blockNum(blockNum),
-                                                   state(state),
+  CacheLine(uint32_t blockNum, CacheState state) : state(state),
+                                                   blockNum(blockNum),
                                                    isEmpty(false) {}
   CacheLine() : isEmpty(true) {}
 };
@@ -28,11 +36,13 @@ class CacheLine {
 class Cache {
  public:
   uint32_t processorId;
-  Bus& bus;
+
+  std::shared_ptr<Bus> bus;
 
   bool isBlocked{false};
   uint32_t blockedFor{0};
   uint32_t blockedOnAdress;
+  CacheOp blockOperation;
   CacheLine newLine;
 
   uint32_t blockSize{32};
@@ -52,8 +62,9 @@ class Cache {
   void memRead();
   void issueBusTransaction();
 
-  void blockAfterPrRdHit(uint32_t addr);
-  void block(uint32_t blockedFor, uint32_t addr, CacheLine newLine);
+  void update();
+
+  void block(uint32_t addr, uint32_t blockedFor, CacheOp blockOp);
 
   CacheLine createNewLine(uint32_t addr, CacheLine::CacheState state);
 
@@ -61,12 +72,11 @@ class Cache {
 
   void lruShuffle(uint32_t setNum, uint32_t blockNum);
   void lruShuffle(uint32_t addr);
-  Cache(uint32_t processorId, Bus& bus, uint32_t associativity, uint32_t totalSets, uint32_t blockSize) : processorId(processorId),
-                                                                                                          bus(bus),
-                                                                                                          blockSize(blockSize),
-                                                                                                          totalSets(totalSets),
-                                                                                                          associativity(associativity) {}
-  Cache(Bus& bus) : bus(bus) {}
+  Cache(uint32_t processorId, std::shared_ptr<Bus> bus, uint32_t associativity, uint32_t totalSets, uint32_t blockSize) : processorId(processorId),
+                                                                                                                          bus(bus),
+                                                                                                                          blockSize(blockSize),
+                                                                                                                          totalSets(totalSets),
+                                                                                                                          associativity(associativity) {}
 };
 }// namespace CacheSim
 

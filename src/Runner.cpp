@@ -41,7 +41,7 @@ void Runner::printConfig() const {
 void Runner::printStats(/*std::array<CoreMonitor, 4>& coreMons, CacheSim::BusMonitor& busMon*/) {}
 
 void Runner::start() {
-  pool.setup(args.benchmark, args.associativity, args.numBlocks, args.blockSize);
+  pool.setup(args.benchmark, args.protocol, args.associativity, args.numBlocks, args.blockSize);
   pool.run();
   //
 }

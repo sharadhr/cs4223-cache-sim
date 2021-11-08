@@ -156,4 +156,7 @@ CoreMonitor:
 ```
 1. Decode and issue is instant
 2. No pipelining
+3. Bus transactions after getting the data
+4. Intermediate bus transactions can cause short circuiting
+5. Snooping on blocknum
 ```

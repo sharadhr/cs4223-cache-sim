@@ -27,19 +27,18 @@ class Processor {
  public:
   uint32_t pc{};
   Cache cache;
-  bool isDone{false};
 
-  Processor() = default;
+  Instruction blockedInstruction;
+
   Processor(const std::ifstream& filePathName, uint8_t pid, uint16_t associativity, uint16_t numBlocks,
-            uint32_t blockSize, Bus& bus) : pid{pid},
-                                            cache(bus) {
+            uint32_t blockSize, std::shared_ptr<Bus> bus) : cache(pid, bus, associativity, numBlocks / associativity, blockSize),
+                                                            pid{pid} {
     instructionStream << filePathName.rdbuf();
   }
-  uint32_t runOneCycle();
+  void runOneCycle();
 
  private:
   bool isBlocked;
-  Instruction blockedInstruction;
   uint32_t blockedFor;
 
   uint8_t pid{};

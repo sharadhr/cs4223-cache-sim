@@ -5,26 +5,17 @@
 #include "Processor.hpp"
 
 namespace CacheSim {
-uint32_t Processor::runOneCycle() {
-  if (isDone) {
-    return 1;
-  }
-
+void Processor::runOneCycle() {
   pc++;
   if (isBlocked && blockedFor > 0) {
     blockedFor--;
-    return 0;
   }
 
-  if (cache.isBlocked && cache.blockedFor > 0) {
-    cache.blockedFor--;
-    return 0;
+  if (cache.isBlocked) {
+    cache.update();
   }
 
-  finishCurrentInstruction();
   issueNextInstruction();
-
-  return 0;
 }
 
 Instruction Processor::getNextInstruction() {
@@ -36,18 +27,9 @@ Instruction Processor::getNextInstruction() {
     return {Instruction::InstructionType::DONE};
 }
 
-void Processor::finishCurrentInstruction() {
-  if (blockedInstruction.type == Instruction::InstructionType::LD || blockedInstruction.type == Instruction::InstructionType::ST) {
-    cache.issueBusTransaction();
-  } else {
-    // TODO: terminate ALU instruction
-  }
-}
-
 void Processor::issueNextInstruction() {
-  Instruction instruction = getNextInstruction();
-  if (instruction.type == Instruction::InstructionType::DONE) {
-    isDone = true;
+  blockedInstruction = getNextInstruction();
+  if (blockedInstruction.type == Instruction::InstructionType::DONE) {
     return;
   }
   // TODO: update cache for mem instructions or block processor for ALU instructions

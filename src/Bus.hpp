@@ -1,20 +1,20 @@
 #ifndef CS4223_CACHE_SIM_BUS_HPP
 #define CS4223_CACHE_SIM_BUS_HPP
 
+#include <array>
 #include <cstdint>
-#include <vector>
 
 #include "Processor.hpp"
 
 namespace CacheSim {
 class Bus {
  public:
-  std::vector<Processor>& processors;
+  std::array<Processor, 4> processors;
   virtual void handlePrRd(uint32_t processorId, uint32_t address);
   virtual void handlePrdRdMiss(uint32_t processorId, uint32_t address);
   virtual void handlePrWr(uint32_t processorId, uint32_t address);
   virtual void handlePrWrMiss(uint32_t processorId, uint32_t address);
-  Bus(std::vector<Processor>& processors) : processors(processors) {}
+  Bus(std::array<Processor, 4> &processors) : processors(processors) {}
 };
 
 class MESIBus : public Bus {
@@ -22,13 +22,14 @@ class MESIBus : public Bus {
   void busRead(uint32_t processorId, uint32_t address);
   void busReadX(uint32_t processorId, uint32_t address);
   void flush(uint32_t processorId, uint32_t address);
+  bool doOtherCachesContainAdress(uint32_t processorId, uint32_t address);
 
  public:
   void handlePrRd(uint32_t processorId, uint32_t address) override;
   void handlePrdRdMiss(uint32_t processorId, uint32_t address) override;
   void handlePrWr(uint32_t processorId, uint32_t address) override;
   void handlePrWrMiss(uint32_t processorId, uint32_t address) override;
-  MESIBus(std::vector<Processor>& processors) : Bus(processors) {}
+  MESIBus(std::array<Processor, 4> &processors) : Bus(processors) {}
 };
 
 class DragonBus : public Bus {
@@ -42,7 +43,7 @@ class DragonBus : public Bus {
   void handlePrdRdMiss(uint32_t processorId, uint32_t address) override;
   void handlePrWr(uint32_t processorId, uint32_t address) override;
   void handlePrWrMiss(uint32_t processorId, uint32_t address) override;
-  DragonBus(std::vector<Processor>& processors) : Bus(processors) {}
+  DragonBus(std::array<Processor, 4> &processors) : Bus(processors) {}
 };
 }// namespace CacheSim
 

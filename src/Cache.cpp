@@ -47,20 +47,10 @@ bool Cache::has(uint32_t addr) {
   return false;
 }
 
-void Cache::blockAfterPrRdHit(uint32_t addr) {
+void Cache::block(uint32_t addr, uint32_t blockedFor, CacheOp blockOp) {
   this->blockedFor = 1;
   this->blockedOnAdress = addr;
-
-  uint32_t blockNum = addr / blockSize;
-  int setNum = blockNum % totalSets;
-
-  std::vector<CacheLine> currentSet = store[setNum];
-
-  for (auto line : currentSet) {
-    if (line.blockNum == blockNum && !line.isEmpty && line.state != CacheLine::CacheState::INVALID) {
-      this->newLine = line;
-    }
-  }
+  this->blockOperation = blockOp;
 }
 
 CacheLine Cache::createNewLine(uint32_t addr, CacheLine::CacheState state) {
@@ -68,25 +58,28 @@ CacheLine Cache::createNewLine(uint32_t addr, CacheLine::CacheState state) {
   return CacheLine(blockNum, state);
 }
 
-void Cache::block(uint32_t blockedFor, uint32_t addr, CacheLine newLine) {
-  this->blockedFor = blockedFor;
-  this->blockedOnAdress = addr;
-  this->newLine = newLine;
-}
-
 void Cache::prRd(uint32_t addr) {
-  if (!has(addr)) {
-    bus.handlePrdRdMiss(processorId, addr);
+  if (has(addr)) {
+    block(addr, 1, CacheOp::PR_RD_HIT);
   } else {
-    bus.handlePrRd(processorId, addr);
+    bus.handlePrdRdMiss(processorId, addr);
   }
 }
 
 void Cache::prWr(uint32_t addr) {
-  if (!has(addr)) {
-    bus.handlePrWr(processorId, addr);
+  if (has(addr)) {
+    block(addr, 1, CacheOp::PR_WR_HIT);
   } else {
     bus.handlePrWrMiss(processorId, addr);
+  }
+}
+
+void Cache::update() {
+  if (blockedFor > 0) {
+    blockedFor--;
+  } else {
+    issueBusTransaction();
+    isBlocked = false;
   }
 }
 }// namespace CacheSim

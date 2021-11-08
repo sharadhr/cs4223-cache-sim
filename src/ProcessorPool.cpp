@@ -8,10 +8,13 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 
+#include "Bus.hpp"
+
 namespace CacheSim {
-void ProcessorPool::setup(const std::filesystem::path& benchmark, uint16_t associativity, uint16_t numBlocks, uint16_t blockSize) {
+ProcessorPool::ProcessorPool(const std::filesystem::path& benchmark, std::string_view protocol, uint16_t associativity, uint16_t numBlocks, uint16_t blockSize) {
   if (benchmark.empty())
     throw std::domain_error("Benchmark file name is empty.");
 
@@ -25,20 +28,30 @@ void ProcessorPool::setup(const std::filesystem::path& benchmark, uint16_t assoc
       throw std::domain_error(coreBenchmarkFile.make_preferred().string() + " does not exist in working directory: "
                               + std::filesystem::current_path().make_preferred().string());
 
-    processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize);
+    if (protocol == "MESI") {
+      auto bus = MESIBus(processors);
+      processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize, std::make_shared<Bus>(bus));
+    } else {
+      auto bus = DragonBus(processors);
+      processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize, std::make_shared<Bus>(bus));
+    }
   }
 }
 
-void ProcessorPool::run() {
-  static std::array<uint16_t, 4> blockedCycles;
-  int breaker = 0;
-
-  while (true) {
-    for (auto& processor : processors) {
-      auto exit = processor.runOneCycle();
-      if (exit) ++breaker;
+bool ProcessorPool::processorsDone() {
+  for (auto& processor : processors) {
+    if (processor.blockedInstruction.type != Instruction::InstructionType::DONE) {
+      return false;
     }
-    if (breaker == processors.size()) break;
+  }
+  return true;
+}
+
+void ProcessorPool::run() {
+  while (!processorsDone()) {
+    for (auto& processor : processors) {
+      processor.runOneCycle();
+    }
   }
 
   // return {processors[0].}
