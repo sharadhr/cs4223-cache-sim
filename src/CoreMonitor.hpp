@@ -6,9 +6,7 @@
 #define CS4223_CACHE_SIM_COREMONITOR_HPP
 
 namespace CacheSim {
-class CoreMonitor {
-  
-};
+class CoreMonitor {};
 }// namespace CacheSim
 
 #endif//CS4223_CACHE_SIM_COREMONITOR_HPP

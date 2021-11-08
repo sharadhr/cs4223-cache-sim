@@ -1,24 +1,17 @@
 #include "Bus.hpp"
 
 namespace CacheSim {
-void DragonBus::handlePrRd(uint32_t processorId, uint32_t addr) {
-}
+void DragonBus::handlePrRd(uint8_t pid, uint32_t address) {}
 
-void DragonBus::handlePrdRdMiss(uint32_t processorId, uint32_t addr) {
-}
+void DragonBus::handlePrdRdMiss(uint8_t pid, uint32_t address) {}
 
-void DragonBus::handlePrWr(uint32_t processorId, uint32_t addr) {
-}
+void DragonBus::handlePrWr(uint8_t pid, uint32_t address) {}
 
-void DragonBus::handlePrWrMiss(uint32_t processorId, uint32_t addr) {
-}
+void DragonBus::handlePrWrMiss(uint8_t pid, uint32_t address) {}
 
-void DragonBus::busRead(uint32_t processorId, uint32_t addr) {
-}
+void DragonBus::busRead(uint8_t pid, uint32_t address) {}
 
-void DragonBus::busUpdate(uint32_t processorId, uint32_t addr) {
-}
+void DragonBus::busUpdate(uint8_t pid, uint32_t address) {}
 
-void DragonBus::flush(uint32_t processorId, uint32_t addr) {
-}
+void DragonBus::flush(uint8_t pid, uint32_t address) {}
 }// namespace CacheSim

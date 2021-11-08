@@ -4,46 +4,47 @@
 #include <array>
 #include <cstdint>
 
-#include "Processor.hpp"
-
 namespace CacheSim {
 class Bus {
  public:
-  std::array<Processor, 4> processors;
-  virtual void handlePrRd(uint32_t processorId, uint32_t address);
-  virtual void handlePrdRdMiss(uint32_t processorId, uint32_t address);
-  virtual void handlePrWr(uint32_t processorId, uint32_t address);
-  virtual void handlePrWrMiss(uint32_t processorId, uint32_t address);
-  Bus(std::array<Processor, 4> &processors) : processors(processors) {}
+  virtual void handlePrRd(uint8_t, uint32_t) = 0;
+  virtual void handlePrdRdMiss(uint8_t, uint32_t) = 0;
+  virtual void handlePrWr(uint8_t, uint32_t) = 0;
+  virtual void handlePrWrMiss(uint8_t, uint32_t) = 0;
+
+  virtual ~Bus() = default;
 };
 
 class MESIBus : public Bus {
  protected:
-  void busRead(uint32_t processorId, uint32_t address);
-  void busReadX(uint32_t processorId, uint32_t address);
-  void flush(uint32_t processorId, uint32_t address);
-  bool doOtherCachesContainAdress(uint32_t processorId, uint32_t address);
+  void busRd(uint8_t, uint32_t);
+  void busRdX(uint8_t, uint32_t);
+  void flush(uint8_t, uint32_t);
+
+  bool doOtherCachesContainAddress(uint8_t, uint32_t);
 
  public:
-  void handlePrRd(uint32_t processorId, uint32_t address) override;
-  void handlePrdRdMiss(uint32_t processorId, uint32_t address) override;
-  void handlePrWr(uint32_t processorId, uint32_t address) override;
-  void handlePrWrMiss(uint32_t processorId, uint32_t address) override;
-  MESIBus(std::array<Processor, 4> &processors) : Bus(processors) {}
+  void handlePrRd(uint8_t, uint32_t) override;
+  void handlePrdRdMiss(uint8_t, uint32_t) override;
+  void handlePrWr(uint8_t, uint32_t) override;
+  void handlePrWrMiss(uint8_t, uint32_t) override;
+
+  ~MESIBus() override = default;
 };
 
 class DragonBus : public Bus {
  protected:
-  void busRead(uint32_t processorId, uint32_t address);
-  void busUpdate(uint32_t processorId, uint32_t address);
-  void flush(uint32_t processorId, uint32_t address);
+  void busRead(uint8_t, uint32_t);
+  void busUpdate(uint8_t, uint32_t);
+  void flush(uint8_t, uint32_t);
 
  public:
-  void handlePrRd(uint32_t processorId, uint32_t address) override;
-  void handlePrdRdMiss(uint32_t processorId, uint32_t address) override;
-  void handlePrWr(uint32_t processorId, uint32_t address) override;
-  void handlePrWrMiss(uint32_t processorId, uint32_t address) override;
-  DragonBus(std::array<Processor, 4> &processors) : Bus(processors) {}
+  void handlePrRd(uint8_t, uint32_t) override;
+  void handlePrdRdMiss(uint8_t, uint32_t) override;
+  void handlePrWr(uint8_t, uint32_t) override;
+  void handlePrWrMiss(uint8_t, uint32_t) override;
+
+  ~DragonBus() override = default;
 };
 }// namespace CacheSim
 

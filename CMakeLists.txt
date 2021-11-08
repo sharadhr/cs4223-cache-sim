@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.16)
 
 project(cs4223_cache_sim
         LANGUAGES CXX)
@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(MSVC)
-	add_compile_options(/Wall)
+	add_compile_options(/W4)
 else()
 	add_compile_options(-Wall -Wextra -Wpedantic)
 endif()

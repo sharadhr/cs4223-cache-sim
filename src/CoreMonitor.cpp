@@ -4,7 +4,4 @@
 
 #include "CoreMonitor.hpp"
 
-namespace CacheSim
-{
-
-}
+namespace CacheSim {}

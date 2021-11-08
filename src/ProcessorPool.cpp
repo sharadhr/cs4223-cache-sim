@@ -4,19 +4,16 @@
 
 #include "ProcessorPool.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
-#include <memory>
 #include <stdexcept>
 
-#include "Bus.hpp"
-
 namespace CacheSim {
-ProcessorPool::ProcessorPool(const std::filesystem::path& benchmark, std::string_view protocol, uint16_t associativity, uint16_t numBlocks, uint16_t blockSize) {
-  if (benchmark.empty())
-    throw std::domain_error("Benchmark file name is empty.");
+void ProcessorPool::setup(const std::filesystem::path& benchmark, std::string_view protocol, uint16_t associativity,
+                          uint16_t numBlocks, uint16_t blockSize) {
+  if (benchmark.empty()) throw std::domain_error("Benchmark file name is empty.");
 
   uint8_t pid = 0;
   for (auto& processor : processors) {
@@ -29,31 +26,23 @@ ProcessorPool::ProcessorPool(const std::filesystem::path& benchmark, std::string
                               + std::filesystem::current_path().make_preferred().string());
 
     if (protocol == "MESI") {
-      auto bus = MESIBus(processors);
-      processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize, std::make_shared<Bus>(bus));
+      std::shared_ptr<Bus> busPtr = std::make_shared<MESIBus>();
+      processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize, busPtr);
     } else {
-      auto bus = DragonBus(processors);
-      processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize, std::make_shared<Bus>(bus));
+      std::shared_ptr<Bus> busPtr = std::make_shared<DragonBus>();
+      processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize, busPtr);
     }
   }
 }
 
 bool ProcessorPool::processorsDone() {
-  for (auto& processor : processors) {
-    if (processor.blockedInstruction.type != Instruction::InstructionType::DONE) {
-      return false;
-    }
-  }
-  return true;
+  return std::ranges::all_of(processors, [](const auto& processor) {
+    return processor.blockedInstruction.type == Instruction::InstructionType::DONE;
+  });
 }
 
 void ProcessorPool::run() {
-  while (!processorsDone()) {
-    for (auto& processor : processors) {
-      processor.runOneCycle();
-    }
-  }
-
-  // return {processors[0].}
+  while (!processorsDone())
+    for (auto& processor : processors) processor.runOneCycle();
 }
 }// namespace CacheSim

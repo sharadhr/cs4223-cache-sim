@@ -1,28 +1,19 @@
 #include "Bus.hpp"
 
 namespace CacheSim {
-bool MESIBus::doOtherCachesContainAdress(uint32_t processorId, uint32_t address) {
-}
+bool MESIBus::doOtherCachesContainAddress(uint8_t pid, uint32_t address) { return false; }
 
-void MESIBus::handlePrRd(uint32_t processorId, uint32_t addr) {
-  processors[processorId].cache.blockAfterPrRdHit(addr);
-}
+void MESIBus::handlePrRd(uint8_t pid, uint32_t address) { /*processor.cache.blockAfterPrRdHit(address);*/ }
 
-void MESIBus::handlePrdRdMiss(uint32_t processorId, uint32_t addr) {
-}
+void MESIBus::handlePrdRdMiss(uint8_t pid, uint32_t address) {}
 
-void MESIBus::handlePrWr(uint32_t processorId, uint32_t addr) {
-}
+void MESIBus::handlePrWr(uint8_t pid, uint32_t address) {}
 
-void MESIBus::handlePrWrMiss(uint32_t processorId, uint32_t addr) {
-}
+void MESIBus::handlePrWrMiss(uint8_t pid, uint32_t address) {}
 
-void MESIBus::busRead(uint32_t processorId, uint32_t addr) {
-}
+void MESIBus::busRd(uint8_t pid, uint32_t address) {}
 
-void MESIBus::busReadX(uint32_t processorId, uint32_t addr) {
-}
+void MESIBus::busRdX(uint8_t pid, uint32_t address) {}
 
-void MESIBus::flush(uint32_t processorId, uint32_t addr) {
-}
+void MESIBus::flush(uint8_t pid, uint32_t address) {}
 }// namespace CacheSim
