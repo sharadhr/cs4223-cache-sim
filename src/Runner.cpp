@@ -6,7 +6,6 @@
 
 #include <iostream>
 
-
 namespace CacheSim {
 void Runner::printConfig() const {
   std::stringstream ss;
@@ -35,16 +34,16 @@ void Runner::printConfig() const {
   std::cout << ss.view() << std::endl;
 }
 
-void Runner::printStats(/*std::array<CoreMonitor, 4>& coreMons, CacheSim::BusMonitor& busMon*/) {}
-
-void Runner::start() {
-  pool.setup(args.benchmark, args.protocol, args.associativity, args.numBlocks, args.blockSize);
-  pool.run();
+void Runner::printStats() {
+  // collect monitors from pool.processors, print stats to file/stdout
+  // collect bus monitor, print stats to file/stdout
 }
 
-Runner Runner::createRunner(int argcount, char** argv) {
+void Runner::start() { pool.run(); }
+
+Runner Runner::createRunner(int argcount, char* argv[]) {
   checkArguments(argcount, argv);
-  return {argcount, argv};
+  return Runner(argv);
 }
 
 void Runner::checkArguments(int argc, char* argv[]) {

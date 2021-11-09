@@ -24,23 +24,18 @@ class Runner {
   };
 
  public:
-  int argc;
   Arguments args;
 
   void printConfig() const;
   void start();
-  static void printStats();
+  void printStats();
   static Runner createRunner(int argcount, char* argv[]);
 
-  Runner(int argc, char* argv[]) : argc(argc), args() {
-    if (argc == 6) {
-      args = {argv[1],
-              std::filesystem::path("data") / argv[2],
-              static_cast<uint32_t>(std::stoul(argv[3])),
-              static_cast<uint16_t>(std::stoul(argv[4])),
-              static_cast<uint16_t>(std::stoul(argv[5])),
-              static_cast<uint16_t>(std::stoul(argv[3]) / std::stoul(argv[5]))};
-    }
+  explicit Runner(char* argv[]) :
+      args({argv[1], std::filesystem::path("data") / argv[2], static_cast<uint32_t>(std::stoul(argv[3])),
+            static_cast<uint16_t>(std::stoul(argv[4])), static_cast<uint16_t>(std::stoul(argv[5])),
+            static_cast<uint16_t>(std::stoul(argv[3]) / std::stoul(argv[5]))}) {
+    pool.setup(args.benchmark, args.protocol, args.associativity, args.numBlocks, args.blockSize);
   }
 
  private:
