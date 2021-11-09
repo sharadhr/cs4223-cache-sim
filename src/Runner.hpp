@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "ProcessorPool.hpp"
@@ -21,6 +22,9 @@ class Runner {
     uint16_t associativity{2};
     uint16_t blockSize{32};
     uint16_t numBlocks{4096 / 32};
+
+    Arguments() = default;
+    explicit Arguments(const char* argv[]);
   };
 
  public:
@@ -29,19 +33,14 @@ class Runner {
   void printConfig() const;
   void start();
   void printStats();
-  static Runner createRunner(int argcount, char* argv[]);
+  static Runner createRunner(int argcount, const char* argv[]);
 
-  explicit Runner(char* argv[]) :
-      args({argv[1], std::filesystem::path("data") / argv[2], static_cast<uint32_t>(std::stoul(argv[3])),
-            static_cast<uint16_t>(std::stoul(argv[4])), static_cast<uint16_t>(std::stoul(argv[5])),
-            static_cast<uint16_t>(std::stoul(argv[3]) / std::stoul(argv[5]))}) {
-    pool.setup(args.benchmark, args.protocol, args.associativity, args.numBlocks, args.blockSize);
-  }
+  explicit Runner(Arguments arguments);
+  [[maybe_unused]] explicit Runner(const char* argv[]);
 
  private:
   CacheSim::ProcessorPool pool;
-
-  static void checkArguments(int argc, char* argv[]);
+  static Arguments checkArguments(int argc, const char* argv[]);
 };
 }// namespace CacheSim
 
