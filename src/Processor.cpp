@@ -9,15 +9,14 @@ void Processor::runOneCycle() {
   ++cycleCounter;
 
   if (isBlocked && blockedFor > 0) --blockedFor;
-
   if (cache.isBlocked) cache.update();
-
   issueNextInstruction();
 }
 
 Instruction Processor::getNextInstruction() {
   int type;
   uint32_t value;
+
   if (instructionStream >> type >> std::hex >> value >> std::dec) return {Instruction::InstructionType(type), value};
   else {
     monitor.computeCycles[pid] = cycleCounter;

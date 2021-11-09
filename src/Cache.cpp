@@ -54,14 +54,12 @@ CacheLine Cache::createNewLine(uint32_t address, CacheLine::CacheState state) co
 
 void Cache::prRd(uint32_t address) {
   if (has(address)) block(address, 1, CacheOp::PR_RD_HIT);
-  else
-    bus->handlePrdRdMiss(pid, address);
+  else bus->handlePrdRdMiss(pid, address);
 }
 
 void Cache::prWr(uint32_t address) {
   if (has(address)) block(address, 1, CacheOp::PR_WR_HIT);
-  else
-    bus->handlePrWrMiss(pid, address);
+  else bus->handlePrWrMiss(pid, address);
 }
 
 void Cache::update() {

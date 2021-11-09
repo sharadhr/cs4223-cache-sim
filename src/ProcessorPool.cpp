@@ -25,13 +25,11 @@ void ProcessorPool::setup(const std::filesystem::path& benchmark, std::string_vi
       throw std::domain_error(coreBenchmarkFile.make_preferred().string() + " does not exist in working directory: "
                               + std::filesystem::current_path().make_preferred().string());
 
-    if (protocol == "MESI") {
-      std::shared_ptr<Bus> busPtr = std::make_shared<MESIBus>();
-      processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize, busPtr);
-    } else {
-      std::shared_ptr<Bus> busPtr = std::make_shared<DragonBus>();
-      processor = Processor(std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize, busPtr);
-    }
+    std::shared_ptr<Bus> busPtr;
+    if (protocol == "MESI") busPtr = std::make_shared<MESIBus>();
+    else busPtr = std::make_shared<DragonBus>();
+
+    processor = {std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize, busPtr};
   }
 }
 
