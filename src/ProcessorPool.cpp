@@ -36,8 +36,8 @@ void ProcessorPool::setup(const std::filesystem::path& benchmark, std::string_vi
 }
 
 bool ProcessorPool::processorsDone() {
-  return std::ranges::all_of(processors, [](const auto& processor) {
-    return processor.blockedInstruction.type == Instruction::InstructionType::DONE;
+  return std::ranges::all_of(processors, [](const Processor& processor) {
+    return processor.blockingInstruction.type == Instruction::InstructionType::DONE;
   });
 }
 

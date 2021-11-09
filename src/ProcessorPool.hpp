@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <sstream>
 
+#include "CoreMonitor.hpp"
 #include "Processor.hpp"
 
 namespace CacheSim {
@@ -22,6 +23,8 @@ class ProcessorPool {
 
  private:
   std::array<Processor, 4> processors;
+
+  friend class Runner;
 };
 }// namespace CacheSim
 

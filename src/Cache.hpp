@@ -31,6 +31,9 @@ class Cache {
  public:
   uint8_t pid{};
   std::shared_ptr<Bus> bus;
+  uint32_t blockSize{32};
+  uint32_t numBlocks{4096 / 32};
+  uint32_t associativity{2};
 
   bool isBlocked{false};
   uint32_t blockedFor{};
@@ -38,9 +41,6 @@ class Cache {
   CacheOp blockOperation{CacheOp::PR_RD_MISS};
   CacheLine newLine{};
 
-  uint32_t blockSize{32};
-  uint32_t totalSets{64};
-  uint32_t associativity{2};
   std::vector<std::vector<CacheLine>> store;
 
   bool has(uint32_t address);
@@ -67,12 +67,12 @@ class Cache {
   void lruShuffle(uint32_t address);
 
   Cache() = default;
-  Cache(uint8_t pid, std::shared_ptr<Bus>& bus, uint16_t associativity, uint16_t totalSets, uint16_t blockSize) :
+  Cache(uint8_t pid, std::shared_ptr<Bus>& bus, uint16_t associativity, uint16_t numBlocks, uint16_t blockSize) :
       pid(pid),
       bus(bus),
+      associativity(associativity),
       blockSize(blockSize),
-      totalSets(totalSets),
-      associativity(associativity) {}
+      numBlocks(numBlocks) {}
 };
 }// namespace CacheSim
 

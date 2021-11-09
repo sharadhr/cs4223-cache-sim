@@ -12,6 +12,7 @@
 
 #include "Bus.hpp"
 #include "Cache.hpp"
+#include "CoreMonitor.hpp"
 
 namespace CacheSim {
 
@@ -23,9 +24,10 @@ struct Instruction {
 
 class Processor {
  public:
-  uint32_t pc{};
+  uint32_t cycleCounter{};
   Cache cache;
-  Instruction blockedInstruction{Instruction::InstructionType::ALU, 0};
+  Instruction blockingInstruction{Instruction::InstructionType::ALU, 0};
+  CoreMonitor monitor{};
 
   Processor() = default;
   Processor(const std::ifstream& filePathName, uint8_t pid, uint16_t associativity, uint16_t numBlocks,

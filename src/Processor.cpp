@@ -6,8 +6,10 @@
 
 namespace CacheSim {
 void Processor::runOneCycle() {
-  pc++;
+  ++cycleCounter;
+
   if (isBlocked && blockedFor > 0) --blockedFor;
+
   if (cache.isBlocked) cache.update();
 
   issueNextInstruction();
@@ -16,16 +18,34 @@ void Processor::runOneCycle() {
 Instruction Processor::getNextInstruction() {
   int type;
   uint32_t value;
-  if (instructionStream >> type >> std::hex >> value >> std::dec)
-    return {static_cast<Instruction::InstructionType>(type), value};
-  else
+  if (instructionStream >> type >> std::hex >> value >> std::dec) return {Instruction::InstructionType(type), value};
+  else {
+    monitor.computeCycles[pid] = cycleCounter;
     return {Instruction::InstructionType::DONE};
+  }
 }
 
 void Processor::issueNextInstruction() {
-  blockedInstruction = getNextInstruction();
-  if (blockedInstruction.type == Instruction::InstructionType::DONE) return;
-  // TODO: update cache for mem instructions or block processor for ALU instructions
+  blockingInstruction = getNextInstruction();
+
+  switch (blockingInstruction.type) {
+    case Instruction::InstructionType::LD:
+      isBlocked = true;
+      // set blockedFor with return value from Cache API
+      break;
+    case Instruction::InstructionType::ST:
+      isBlocked = true;
+      // set blockedFor with return value from Cache API
+      break;
+    case Instruction::InstructionType::ALU:
+      isBlocked = true;
+      blockedFor = blockingInstruction.value;
+      monitor.executionCycles[pid] += blockedFor;
+      break;
+    case Instruction::InstructionType::DONE:
+      isBlocked = false;
+      break;
+  }
 }
 
 }// namespace CacheSim

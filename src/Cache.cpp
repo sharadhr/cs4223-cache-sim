@@ -8,7 +8,7 @@ namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
   if (!has(address)) return;
   auto blockNum = address / blockSize;
-  auto setNum = blockNum % totalSets;
+  auto setNum = blockNum % numBlocks;
   auto indexInSet = getIndexOfBlockInSet(address);
 
   std::vector<CacheLine>& currentSet = store[setNum];
@@ -20,7 +20,7 @@ void Cache::lruShuffle(uint32_t address) {
 
 uint32_t Cache::getIndexOfBlockInSet(uint32_t address) {
   auto blockNum = address / blockSize;
-  auto setNum = blockNum % totalSets;
+  auto setNum = blockNum % numBlocks;
 
   std::vector<CacheLine> currentSet = store[setNum];
 
@@ -33,7 +33,7 @@ uint32_t Cache::getIndexOfBlockInSet(uint32_t address) {
 
 bool Cache::has(uint32_t address) {
   uint32_t blockNum = address / blockSize;
-  uint32_t setNum = blockNum % totalSets;
+  uint32_t setNum = blockNum % numBlocks;
 
   std::vector<CacheLine> currentSet = store[setNum];
 
