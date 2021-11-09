@@ -17,8 +17,8 @@ class ProcessorPool {
  public:
   ProcessorPool() = default;
   void run();
-  void setup(const std::filesystem::path& benchmark, std::string_view protocol, uint16_t associativity,
-             uint16_t numBlocks, uint16_t blockSize);
+  void setup(const std::filesystem::path& benchmark, std::string_view protocol, uint8_t associativity,
+             uint32_t numBlocks, uint16_t blockSize);
   bool processorsDone();
 
  private:

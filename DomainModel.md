@@ -67,7 +67,7 @@ struct Instruction {
 Processor:
   instructions: Vec<Instruction>
 
-  private cycleCounter: integer
+  private cycleCount: integer
   private inputStream: InstructionStream
 
   public coreMonitor: CoreMonitor

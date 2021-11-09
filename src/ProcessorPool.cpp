@@ -11,8 +11,8 @@
 #include <stdexcept>
 
 namespace CacheSim {
-void ProcessorPool::setup(const std::filesystem::path& benchmark, std::string_view protocol, uint16_t associativity,
-                          uint16_t numBlocks, uint16_t blockSize) {
+void ProcessorPool::setup(const std::filesystem::path& benchmark, std::string_view protocol, uint8_t associativity,
+                          uint32_t numBlocks, uint16_t blockSize) {
   if (benchmark.empty()) throw std::domain_error("Benchmark file name is empty.");
 
   uint8_t pid = 0;

@@ -12,10 +12,10 @@ class CoreMonitor {
  public:
 
  private:
-  std::array<uint32_t, 4> executionCycles;
-  std::array<uint32_t, 4> computeCycles;
-  std::array<uint32_t, 4> loadStoreInst;
-  std::array<uint32_t, 4> idleCycles;
+  uint64_t executionCycleCount;
+  uint64_t computeCycleCount;
+  uint64_t idleCycleCount;
+  uint64_t loadStoreCount;
 
   friend class Processor;
 };

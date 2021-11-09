@@ -11,7 +11,7 @@ Runner::Arguments::Arguments(const char* argv[]) :
     protocol(argv[1]),
     benchmark(argv[2]),
     cacheSize(static_cast<uint32_t>(std::stoul(argv[3]))),
-    associativity(static_cast<uint16_t>(std::stoul(argv[4]))),
+    associativity(static_cast<uint8_t>(std::stoul(argv[4]))),
     blockSize(static_cast<uint16_t>(std::stoul(argv[5]))),
     numBlocks(cacheSize / blockSize) {}
 
@@ -23,7 +23,7 @@ Runner::Arguments Runner::checkArguments(int argc, const char* argv[]) {
 
   std::vector<std::string> argVec(argv, argv + argc);
   Arguments arguments(argv);
-  if (arguments.protocol != "MESI" || arguments.protocol != "Dragon")
+  if (arguments.protocol != std::string_view("MESI") || arguments.protocol != "Dragon")
     throw std::domain_error(R"(Protocol must be either "MESI" or "Dragon", but ")" + argVec[1]
                             + R"(" was provided instead.)");
 
@@ -56,10 +56,10 @@ void Runner::printConfig() const {
   ss << "====================================" << std::endl << "Cache size: " << args.cacheSize << " B";
 
   if (args.cacheSize > (1 << 10) && args.cacheSize < (1 << 20))
-    ss << " (" << std::setprecision(4) << static_cast<float>(args.cacheSize) / static_cast<float>(1 << 10) << " KiB)"
+    ss << " (" << std::setprecision(4) << static_cast<double>(args.cacheSize) / static_cast<double>(1 << 10) << " KiB)"
        << std::endl;
   else if (args.cacheSize > (1 << 20))
-    ss << " (" << std::setprecision(4) << static_cast<float>(args.cacheSize) / static_cast<float>(1 << 20) << " MiB)"
+    ss << " (" << std::setprecision(4) << static_cast<double>(args.cacheSize) / static_cast<double>(1 << 20) << " MiB)"
        << std::endl;
   else ss << std::endl;
 

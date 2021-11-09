@@ -24,15 +24,15 @@ struct Instruction {
 
 class Processor {
  public:
-  uint32_t cycleCounter{};
+  uint32_t cycleCount{};
   Cache cache;
   Instruction blockingInstruction{Instruction::InstructionType::ALU, 0};
   CoreMonitor monitor{};
 
   Processor() = default;
-  Processor(const std::ifstream& filePathName, uint8_t pid, uint16_t associativity, uint16_t numBlocks,
+  Processor(const std::ifstream& filePathName, uint8_t pid, uint8_t associativity, uint32_t numBlocks,
             uint16_t blockSize, std::shared_ptr<Bus>& bus) :
-      cache(pid, bus, associativity, numBlocks / associativity, blockSize),
+      cache(pid, bus, associativity, numBlocks, blockSize),
       pid{pid} {
     instructionStream << filePathName.rdbuf();
   }

@@ -19,9 +19,9 @@ class Runner {
     std::string_view protocol{"MESI"};
     std::filesystem::path benchmark{"data/bodytrack"};
     uint32_t cacheSize{4096};
-    uint16_t associativity{2};
+    uint8_t associativity{2};
     uint16_t blockSize{32};
-    uint16_t numBlocks{4096 / 32};
+    uint32_t numBlocks{4096 / 32};
 
     Arguments() = default;
     explicit Arguments(const char* argv[]);

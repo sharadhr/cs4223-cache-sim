@@ -31,9 +31,9 @@ class Cache {
  public:
   uint8_t pid{};
   std::shared_ptr<Bus> bus;
-  uint32_t blockSize{32};
+  uint16_t blockSize{32};
   uint32_t numBlocks{4096 / 32};
-  uint32_t associativity{2};
+  uint8_t associativity{2};
 
   bool isBlocked{false};
   uint32_t blockedFor{};
@@ -67,7 +67,7 @@ class Cache {
   void lruShuffle(uint32_t address);
 
   Cache() = default;
-  Cache(uint8_t pid, std::shared_ptr<Bus>& bus, uint16_t associativity, uint16_t numBlocks, uint16_t blockSize) :
+  Cache(uint8_t pid, std::shared_ptr<Bus>& bus, uint8_t associativity, uint32_t numBlocks, uint16_t blockSize) :
       pid(pid),
       bus(bus),
       associativity(associativity),
