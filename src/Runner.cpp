@@ -9,7 +9,7 @@
 namespace CacheSim {
 Runner::Arguments::Arguments(const char* argv[]) :
     protocol(argv[1]),
-    benchmark(argv[2]),
+    benchmark(std::filesystem::path("data") / argv[2]),
     cacheSize(static_cast<uint32_t>(std::stoul(argv[3]))),
     associativity(static_cast<uint8_t>(std::stoul(argv[4]))),
     blockSize(static_cast<uint16_t>(std::stoul(argv[5]))),
@@ -23,7 +23,7 @@ Runner::Arguments Runner::checkArguments(int argc, const char* argv[]) {
 
   std::vector<std::string> argVec(argv, argv + argc);
   Arguments arguments(argv);
-  if (arguments.protocol != std::string_view("MESI") || arguments.protocol != "Dragon")
+  if (arguments.protocol != "MESI" && arguments.protocol != "Dragon")
     throw std::domain_error(R"(Protocol must be either "MESI" or "Dragon", but ")" + argVec[1]
                             + R"(" was provided instead.)");
 
@@ -69,7 +69,7 @@ void Runner::printConfig() const {
   if (args.associativity == 1) ss << "direct-mapped" << std::endl;
   else if (args.associativity == args.numBlocks) ss << "fully associative" << std::endl;
   else {
-    ss << args.associativity << "-way set-associative" << std::endl
+    ss << std::to_string(args.associativity) << "-way set-associative" << std::endl
        << "Cache blocks: " << args.numBlocks << " (" << (args.numBlocks / args.associativity) << " per set)"
        << std::endl
        << "====================================" << std::endl;

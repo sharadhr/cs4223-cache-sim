@@ -20,7 +20,7 @@ Instruction Processor::getNextInstruction() {
   if (instructionStream >> type >> std::hex >> value >> std::dec) return {Instruction::InstructionType(type), value};
   else {
     monitor.executionCycleCount = cycleCount;
-    return {Instruction::InstructionType::DONE};
+    return {Instruction::InstructionType::DONE, 0};
   }
 }
 

@@ -70,9 +70,9 @@ class Cache {
   Cache(uint8_t pid, std::shared_ptr<Bus>& bus, uint8_t associativity, uint32_t numBlocks, uint16_t blockSize) :
       pid(pid),
       bus(bus),
-      associativity(associativity),
       blockSize(blockSize),
-      numBlocks(numBlocks) {}
+      numBlocks(numBlocks),
+      associativity(associativity) {}
 };
 }// namespace CacheSim
 

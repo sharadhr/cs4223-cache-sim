@@ -5,17 +5,17 @@
 #ifndef CS4223_CACHE_SIM_COREMONITOR_HPP
 #define CS4223_CACHE_SIM_COREMONITOR_HPP
 
-#include <array>
+#include <cstdint>
 
 namespace CacheSim {
 class CoreMonitor {
  public:
 
  private:
-  uint64_t executionCycleCount;
-  uint64_t computeCycleCount;
-  uint64_t idleCycleCount;
-  uint64_t loadStoreCount;
+  uint64_t executionCycleCount{};
+  uint64_t computeCycleCount{};
+  uint64_t idleCycleCount{};
+  uint64_t loadStoreCount{};
 
   friend class Processor;
 };
