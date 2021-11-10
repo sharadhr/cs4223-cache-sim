@@ -11,9 +11,12 @@
 #include <utility>
 #include <vector>
 
-#include "ProcessorPool.hpp"
+#include "System.hpp"
 
 namespace CacheSim {
+/**
+ * Runner
+ */
 class Runner {
   struct Arguments {
     std::string_view protocol{"MESI"};
@@ -30,17 +33,16 @@ class Runner {
  public:
   Arguments args;
 
+  static Arguments checkArguments(int argc, const char* argv[]);
   void printConfig() const;
   void start();
   void printStats();
-  static Runner createRunner(int argcount, const char* argv[]);
 
   explicit Runner(Arguments arguments);
   [[maybe_unused]] explicit Runner(const char* argv[]);
 
  private:
-  CacheSim::System pool;
-  static Arguments checkArguments(int argc, const char* argv[]);
+  CacheSim::System simSystem;
 };
 }// namespace CacheSim
 

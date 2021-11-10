@@ -15,6 +15,14 @@ Runner::Arguments::Arguments(const char* argv[]) :
     blockSize(static_cast<uint16_t>(std::stoul(argv[5]))),
     numBlocks(cacheSize / blockSize) {}
 
+Runner::Runner(Runner::Arguments arguments) :
+    args(std::move(arguments)),
+    simSystem(args.benchmark, args.protocol, args.associativity, args.numBlocks, args.blockSize) {}
+
+[[maybe_unused]] Runner::Runner(const char* argv[]) :
+    args(argv),
+    simSystem(args.benchmark, args.protocol, args.associativity, args.numBlocks, args.blockSize) {}
+
 Runner::Arguments Runner::checkArguments(int argc, const char* argv[]) {
   if (argc < 6) {
     std::cout << "Fewer than 5 arguments were provided. Using defaults." << std::endl;
@@ -26,30 +34,22 @@ Runner::Arguments Runner::checkArguments(int argc, const char* argv[]) {
   Arguments arguments(argv);
   if (arguments.protocol != "MESI" && arguments.protocol != "Dragon")
     throw std::domain_error(R"(Protocol must be either "MESI" or "Dragon", but ")" + argVec[1]
-                            + R"(" was provided instead.)");
+                            + R"(" was encountered instead.)");
 
   if (arguments.blockSize % 4 != 0)
-    throw std::domain_error("Block size must be integer multiple of word size (4 B). Provided value was "
+    throw std::domain_error("Block size must be integer multiple of word size (4 B). Encountered value was "
                             + std::to_string(arguments.blockSize));
 
   if (arguments.cacheSize % arguments.blockSize)
-    throw std::domain_error("Cache size must be integer multiple of block size (" + argVec[5] + " B). Provided "
+    throw std::domain_error("Cache size must be integer multiple of block size (" + argVec[5] + " B). Encountered "
                             "value was " + argVec[3]);
 
   if (arguments.numBlocks % arguments.associativity != 0)
     throw std::domain_error(
-        "Associativity does not evenly divide number of blocks. Provided values were: associativity: " + argVec[4]
+        "Associativity does not evenly divide number of blocks. Encountered values were: associativity: " + argVec[4]
         + " Number of blocks: " + std::to_string(arguments.numBlocks));
 
   return arguments;
-}
-
-Runner::Runner(Runner::Arguments arguments) : args(std::move(arguments)) {
-  pool.setup(args.benchmark, args.protocol, args.associativity, args.numBlocks, args.blockSize);
-}
-
-[[maybe_unused]] Runner::Runner(const char* argv[]) : args(argv) {
-  pool.setup(args.benchmark, args.protocol, args.associativity, args.numBlocks, args.blockSize);
 }
 
 void Runner::printConfig() const {
@@ -75,8 +75,8 @@ void Runner::printConfig() const {
     ss << std::to_string(args.associativity) << "-way set-associative" << std::endl
        << "Cache blocks: " << args.numBlocks << " (" << (args.numBlocks / args.associativity) << " per set)"
        << std::endl
-       << "====================================" << std::endl;
-    std::cout << ss.view();
+       << "====================================";
+    std::cout << ss.view() << std::endl;
     return;
   }
   ss << "Cache blocks: " << args.numBlocks << std::endl << "====================================";
@@ -85,18 +85,16 @@ void Runner::printConfig() const {
 }
 
 void Runner::printStats() {
-  // collect monitors from pool.processors, print stats to file/stdout
+  // collect monitors from simSystem.processors, print stats to file/stdout
   // collect bus monitor, print stats to file/stdout
 }
 
-auto Runner::start() -> void { pool.run(); }
-
-auto Runner::createRunner(int argcount, const char* argv[]) -> Runner { return Runner(checkArguments(argcount, argv)); }
+auto Runner::start() -> void { simSystem.run(); }
 }// namespace CacheSim
 
 int main(int argc, const char* argv[]) {
   try {
-    auto runner = CacheSim::Runner::createRunner(argc, argv);
+    CacheSim::Runner runner{CacheSim::Runner::checkArguments(argc, argv)};
     runner.printConfig();
     runner.start();
     runner.printStats();
