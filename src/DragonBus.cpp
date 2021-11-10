@@ -1,6 +1,10 @@
 #include "Bus.hpp"
+#include "Processor.hpp"
 
 namespace CacheSim {
+
+/* DragonBus::DragonBus(std::array<Processor, 4>& processors) : Bus(processors) {} */
+
 void DragonBus::handlePrRd(uint8_t pid, uint32_t address) {}
 
 void DragonBus::handlePrdRdMiss(uint8_t pid, uint32_t address) {}

@@ -4,45 +4,35 @@
 #include <array>
 #include <cstdint>
 
+#include "Cache.hpp"
+
 namespace CacheSim {
+class Processor;
+class CacheState;
+
 class Bus {
+ protected:
+  uint32_t blockSize{32};
+
  public:
-  virtual void handlePrRd(uint8_t, uint32_t) = 0;
-  virtual void handlePrdRdMiss(uint8_t, uint32_t) = 0;
-  virtual void handlePrWr(uint8_t, uint32_t) = 0;
-  virtual void handlePrWrMiss(uint8_t, uint32_t) = 0;
+  virtual uint32_t cyclesToWaitFor(std::array<Processor, 4>, uint32_t) = 0;
+  virtual std::array<CacheState, 4> transition(std::array<CacheState, 4>, uint32_t, CacheOp) = 0;
 
   virtual ~Bus() = default;
 };
 
 class MESIBus : public Bus {
- protected:
-  void busRd(uint8_t, uint32_t);
-  void busRdX(uint8_t, uint32_t);
-  void flush(uint8_t, uint32_t);
-
-  bool doOtherCachesContainAddress(uint8_t, uint32_t);
-
  public:
-  void handlePrRd(uint8_t, uint32_t) override;
-  void handlePrdRdMiss(uint8_t, uint32_t) override;
-  void handlePrWr(uint8_t, uint32_t) override;
-  void handlePrWrMiss(uint8_t, uint32_t) override;
+  uint32_t cyclesToWaitFor(std::array<Processor, 4>, uint32_t) override;
+  std::array<CacheState, 4> transition(std::array<CacheState, 4>, uint32_t, CacheOp) override;
 
   ~MESIBus() override = default;
 };
 
 class DragonBus : public Bus {
- protected:
-  void busRead(uint8_t, uint32_t);
-  void busUpdate(uint8_t, uint32_t);
-  void flush(uint8_t, uint32_t);
-
  public:
-  void handlePrRd(uint8_t, uint32_t) override;
-  void handlePrdRdMiss(uint8_t, uint32_t) override;
-  void handlePrWr(uint8_t, uint32_t) override;
-  void handlePrWrMiss(uint8_t, uint32_t) override;
+  uint32_t cyclesToWaitFor(std::array<Processor, 4>, uint32_t) override;
+  std::array<CacheState, 4> transition(std::array<CacheState, 4>, uint32_t, CacheOp) override;
 
   ~DragonBus() override = default;
 };

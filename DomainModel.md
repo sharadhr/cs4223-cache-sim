@@ -10,6 +10,13 @@ Processor ---------------
 PC -> Cache(L1) -> CoreMonitor
 ---------------------------
 
+/**
+ * associativity: 2, totalSets = 64
+ * 1: CacheLine1, CacheLine2
+ * 2: CacheLine1, CacheLine2
+ * ....
+ * 64: CacheLine1, CacheLine2
+ */
 Cache--------------------
 CacheController -> Array -> Struct CacheLine{ Data, State }
 -------------------------
@@ -183,7 +190,6 @@ Cache::prRd(address) ---RdHit--> Cache::block(address, 1) ---wait for those cycl
 Cache::prRd(address) ---RdMiss--> Bus::cyclesToWait() ---> Cache::block(address, blockedFor, RD_MISS) ---wait for those cycles--> Cache::issueBusTransaction()
 Cache::prWr(address) ---WrHit--> Cache::block(address, 1) ---wait for those cycles--> Cache::issueBusTransaction()
 Cache::prWr(address) ---WrMiss--> Bus::cyclesToWait(address, 1) ---> Cache::block(address, blockedFor, WR_MISS) ---wait for those cycles--> Cache::issueBusTransaction()
-
 ```
 
 ## Assumptions:

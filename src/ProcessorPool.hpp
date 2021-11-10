@@ -13,9 +13,9 @@
 #include "Processor.hpp"
 
 namespace CacheSim {
-class ProcessorPool {
+class System {
  public:
-  ProcessorPool() = default;
+  System() = default;
   void run();
   void setup(const std::filesystem::path& benchmark, std::string_view protocol, uint8_t associativity,
              uint32_t numBlocks, uint16_t blockSize);
@@ -23,6 +23,7 @@ class ProcessorPool {
 
  private:
   std::array<Processor, 4> processors;
+  std::unique_ptr<Bus> bus;
 
   friend class Runner;
 };

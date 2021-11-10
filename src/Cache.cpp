@@ -45,6 +45,7 @@ bool Cache::has(uint32_t address) {
 void Cache::block(uint32_t address, uint32_t blockedForCycles, CacheOp blockOp) {
   blockedOnAddress = address;
   blockOperation = blockOp;
+  blockedFor = blockedForCycles;
 }
 
 CacheLine Cache::createNewLine(uint32_t address, CacheLine::CacheState state) const {
@@ -54,12 +55,14 @@ CacheLine Cache::createNewLine(uint32_t address, CacheLine::CacheState state) co
 
 void Cache::prRd(uint32_t address) {
   if (has(address)) block(address, 1, CacheOp::PR_RD_HIT);
-  else bus->handlePrdRdMiss(pid, address);
+  else
+    bus->handlePrdRdMiss(pid, address);
 }
 
 void Cache::prWr(uint32_t address) {
   if (has(address)) block(address, 1, CacheOp::PR_WR_HIT);
-  else bus->handlePrWrMiss(pid, address);
+  else
+    bus->handlePrWrMiss(pid, address);
 }
 
 void Cache::update() {
@@ -69,6 +72,4 @@ void Cache::update() {
     isBlocked = false;
   }
 }
-
-void Cache::issueBusTransaction() {}
 }// namespace CacheSim

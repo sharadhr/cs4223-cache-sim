@@ -24,6 +24,7 @@ struct Instruction {
 
 class Processor {
  public:
+  uint8_t pid{};
   uint32_t cycleCount{};
   Cache cache;
   Instruction blockingInstruction{Instruction::InstructionType::ALU, 0};
@@ -39,7 +40,6 @@ class Processor {
   void runOneCycle();
 
  private:
-  uint8_t pid{};
   bool isBlocked{};
   uint32_t blockedFor{};
   std::stringstream instructionStream;

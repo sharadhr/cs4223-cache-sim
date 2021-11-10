@@ -3,9 +3,8 @@
 
 #include <cstdint>
 #include <memory>
+#include <queue>
 #include <vector>
-
-#include "Bus.hpp"
 
 namespace CacheSim {
 enum class CacheOp { PR_RD_HIT, PR_WR_HIT, PR_RD_MISS, PR_WR_MISS };
@@ -22,15 +21,13 @@ class CacheLine {
 
   CacheState state{CacheState::INVALID};
   uint32_t blockNum{};
-  bool isEmpty{true};
-  CacheLine(uint32_t blockNum, CacheState state) : state(state), blockNum(blockNum), isEmpty(false) {}
-  CacheLine() : isEmpty(true) {}
+  CacheLine(uint32_t blockNum, CacheState state) : state(state), blockNum(blockNum) {}
+  CacheLine() : state(CacheState::INVALID) {}
 };
 
 class Cache {
- public:
+ private:
   uint8_t pid{};
-  std::shared_ptr<Bus> bus;
   uint16_t blockSize{32};
   uint32_t numBlocks{4096 / 32};
   uint8_t associativity{2};
@@ -39,41 +36,62 @@ class Cache {
   uint32_t blockedFor{};
   uint32_t blockedOnAddress{};
   CacheOp blockOperation{CacheOp::PR_RD_MISS};
-  CacheLine newLine{};
 
   std::vector<std::vector<CacheLine>> store;
 
-  bool has(uint32_t address);
-
-  void prWr(uint32_t address);
-  void prRd(uint32_t);
-
   CacheLine getLine(uint32_t);
 
-  void evict(uint32_t);
   void memWriteBack();
   void memRead();
   void issueBusTransaction();
 
+  // lruShuffle, writeback write-allocate
+  void evict(uint32_t);
+
+  // lruShuffle
+  void flush(uint32_t);
+
+  void block(uint32_t, uint32_t, CacheOp);
+
+  CacheLine createNewLine(uint32_t, CacheLine::CacheState) const;
+
+  uint32_t getIndexOfBlockInSet(uint32_t);
+
+  void lruShuffle(uint32_t, uint32_t);
+  void lruShuffle(uint32_t);
+
+ public:
   void update();
 
-  void block(uint32_t address, uint32_t blockedForCycles, CacheOp blockOp);
+  bool has(uint32_t);
 
-  CacheLine createNewLine(uint32_t address, CacheLine::CacheState state) const;
+  // lruShuffle
+  void prWr(uint32_t);
 
-  uint32_t getIndexOfBlockInSet(uint32_t blockNum);
-
-  void lruShuffle(uint32_t setIndex, uint32_t blockNum);
-  void lruShuffle(uint32_t address);
+  // lruShuffle
+  void prRd(uint32_t);
 
   Cache() = default;
-  Cache(uint8_t pid, std::shared_ptr<Bus>& bus, uint8_t associativity, uint32_t numBlocks, uint16_t blockSize) :
+  Cache(uint8_t pid, uint8_t associativity, uint32_t numBlocks, uint16_t blockSize) :
       pid(pid),
-      bus(bus),
       blockSize(blockSize),
       numBlocks(numBlocks),
-      associativity(associativity) {}
+      associativity(associativity) {
+    store = std::vector(numBlocks / associativity, std::vector(associativity, CacheLine()));
+  }
 };
 }// namespace CacheSim
+
+//
+// get(CacheLine1)
+// CacheLine2, CacheLine1
+//
+// p2.cache.prWr(address)
+// p1.flush(address)
+//
+// CacheLine1: invalidated, CacheLine2: Valid,
+//
+// p1.cache.get(address) RdMiss -> p2.cache.has(address)
+//
 
 #endif
