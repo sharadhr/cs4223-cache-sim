@@ -21,8 +21,8 @@ System::System(const std::filesystem::path& benchmark, std::string_view protocol
     processor = {std::ifstream(coreBenchmarkFile), associativity, numBlocks, blockSize};
   }
 
-  if (protocol == "MESI") bus = std::make_unique<MESIBus>();
-  else bus = std::make_unique<DragonBus>();
+  if (protocol == "MESI") bus = std::make_unique<MESIBus>(blockSize);
+  else bus = std::make_unique<DragonBus>(blockSize);
 }
 
 bool System::processorsDone() {

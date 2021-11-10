@@ -10,7 +10,6 @@
 #include <sstream>
 
 #include "Bus.hpp"
-#include "CoreMonitor.hpp"
 #include "Processor.hpp"
 
 namespace CacheSim {

@@ -7,34 +7,38 @@
 #include "Cache.hpp"
 
 namespace CacheSim {
-class Processor;
-class CacheState;
-
 class Bus {
- protected:
-  uint32_t blockSize{32};
-
  public:
-  virtual uint32_t cyclesToWaitFor(std::array<Processor, 4>&, uint32_t, CacheOp) = 0;
-  virtual std::array<CacheState, 4> transition(std::array<CacheState, 4>, uint32_t, CacheOp) = 0;
+  virtual std::array<uint32_t, 4> blockCycles(std::array<uint32_t, 4>& currentBlockedCycles, uint8_t pid, CacheOp) = 0;
+  virtual std::array<CacheLine::CacheState, 4> transition(std::array<CacheLine::CacheState, 4>& previousCycles,
+                                                          uint8_t pid, CacheOp operation) = 0;
 
+  Bus() = default;
+  explicit Bus(uint16_t blockSize) : blockSize(blockSize){};
   virtual ~Bus() = default;
+
+ protected:
+  uint16_t blockSize{32};
 };
 
 class MESIBus : public Bus {
  public:
-  uint32_t cyclesToWaitFor(std::array<Processor, 4>&, uint32_t, CacheOp) override;
-  std::array<CacheState, 4> transition(std::array<CacheState, 4>, uint32_t, CacheOp) override;
+  MESIBus() = default;
+  explicit MESIBus(uint16_t blockSize) : Bus(blockSize){};
 
-  ~MESIBus() override = default;
+  std::array<uint32_t, 4> blockCycles(std::array<uint32_t, 4>& currentBlockedCycles, uint8_t pid, CacheOp) override;
+  std::array<CacheLine::CacheState, 4> transition(std::array<CacheLine::CacheState, 4>& previousCycles, uint8_t pid,
+                                                  CacheOp operation) override;
 };
 
 class DragonBus : public Bus {
  public:
-  uint32_t cyclesToWaitFor(std::array<Processor, 4>&, uint32_t, CacheOp) override;
-  std::array<CacheState, 4> transition(std::array<CacheState, 4>, uint32_t, CacheOp) override;
+  DragonBus() = default;
+  explicit DragonBus(uint16_t blockSize) : Bus(blockSize){};
 
-  ~DragonBus() override = default;
+  std::array<uint32_t, 4> blockCycles(std::array<uint32_t, 4>& currentBlockedCycles, uint8_t pid, CacheOp) override;
+  std::array<CacheLine::CacheState, 4> transition(std::array<CacheLine::CacheState, 4>& previousCycles, uint8_t pid,
+                                                  CacheOp operation) override;
 };
 }// namespace CacheSim
 
