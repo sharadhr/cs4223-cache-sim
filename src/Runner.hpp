@@ -39,7 +39,7 @@ class Runner {
   [[maybe_unused]] explicit Runner(const char* argv[]);
 
  private:
-  CacheSim::ProcessorPool pool;
+  CacheSim::System pool;
   static Arguments checkArguments(int argc, const char* argv[]);
 };
 }// namespace CacheSim

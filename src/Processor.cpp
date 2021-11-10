@@ -10,7 +10,6 @@ void Processor::runOneCycle() {
 
   if (isBlocked && blockedFor > 0) --blockedFor;
   if (cache.isBlocked) cache.update();
-  issueNextInstruction();
 }
 
 Instruction Processor::getNextInstruction() {

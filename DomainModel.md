@@ -200,3 +200,29 @@ Cache::prWr(address) ---WrMiss--> Bus::cyclesToWait(address, 1) ---> Cache::bloc
 4. Intermediate bus transactions can cause short circuiting
 5. Snooping on blocknum
 ```
+
+
+# Sytem Interactions
+```
+run () {
+  1. advance processors and cache
+
+  # HANDLING BLOCK
+  ## Processor.blockedFor > 0 || Processor.cache.blockedFor > 0 (Currently blocked)
+  1. Do nothing
+
+  ## Processor.blockedFor == 0 && Processor.cache.blockedFor == 0 (Unblocked)
+  1. Check why it was blocked
+  2. Blocked for cache state transition -> cache.evictionNeed -> cache.evict() -> Bus::transition() -> System::stateTransition(old block) -> Sytem::blockFor(new block) -> Bus::cyclesToWaitFor(processors, pid, CacheOp)
+  3. Blocked for cache state transition -> !cache.evictionNeed -> Bus::transition -> stateStateTransition -> System::issueNewInstruction()
+  4. Blocked for ALU processor, issueNextInstruction()
+}
+
+System::issueNewInstruction() {
+  # HANDLING NEW INSTRUCTION
+  1. Processor.issueNewInstruction() -> set blockingInstruction
+  2. New instruction is LD/ST -> cache sets eviction needed and blocks itself -> cache.evict()
+  2. New instruction is LD/ST -> cache doesnt need eviction -> System.blockedFor() -> processor.cache.block()
+  2. New instruction is ALU -> processor.blockedFor and isBlocked
+}
+```

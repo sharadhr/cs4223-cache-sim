@@ -15,7 +15,7 @@ class Bus {
   uint32_t blockSize{32};
 
  public:
-  virtual uint32_t cyclesToWaitFor(std::array<Processor, 4>, uint32_t) = 0;
+  virtual uint32_t cyclesToWaitFor(std::array<Processor, 4>&, uint32_t, CacheOp) = 0;
   virtual std::array<CacheState, 4> transition(std::array<CacheState, 4>, uint32_t, CacheOp) = 0;
 
   virtual ~Bus() = default;
@@ -23,7 +23,7 @@ class Bus {
 
 class MESIBus : public Bus {
  public:
-  uint32_t cyclesToWaitFor(std::array<Processor, 4>, uint32_t) override;
+  uint32_t cyclesToWaitFor(std::array<Processor, 4>&, uint32_t, CacheOp) override;
   std::array<CacheState, 4> transition(std::array<CacheState, 4>, uint32_t, CacheOp) override;
 
   ~MESIBus() override = default;
@@ -31,7 +31,7 @@ class MESIBus : public Bus {
 
 class DragonBus : public Bus {
  public:
-  uint32_t cyclesToWaitFor(std::array<Processor, 4>, uint32_t) override;
+  uint32_t cyclesToWaitFor(std::array<Processor, 4>&, uint32_t, CacheOp) override;
   std::array<CacheState, 4> transition(std::array<CacheState, 4>, uint32_t, CacheOp) override;
 
   ~DragonBus() override = default;

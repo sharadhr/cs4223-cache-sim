@@ -25,6 +25,9 @@ class System {
   std::array<Processor, 4> processors;
   std::unique_ptr<Bus> bus;
 
+  uint32_t blockedFor(uint32_t);
+  void transitionCacheStates(uint32_t pid);
+
   friend class Runner;
 };
 }// namespace CacheSim

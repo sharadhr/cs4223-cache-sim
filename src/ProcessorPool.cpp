@@ -10,9 +10,11 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "Processor.hpp"
+
 namespace CacheSim {
-void ProcessorPool::setup(const std::filesystem::path& benchmark, std::string_view protocol, uint8_t associativity,
-                          uint32_t numBlocks, uint16_t blockSize) {
+void System::setup(const std::filesystem::path& benchmark, std::string_view protocol, uint8_t associativity,
+                   uint32_t numBlocks, uint16_t blockSize) {
   if (benchmark.empty()) throw std::domain_error("Benchmark file name is empty.");
 
   uint8_t pid = 0;
@@ -27,20 +29,27 @@ void ProcessorPool::setup(const std::filesystem::path& benchmark, std::string_vi
 
     std::shared_ptr<Bus> busPtr;
     if (protocol == "MESI") busPtr = std::make_shared<MESIBus>();
-    else busPtr = std::make_shared<DragonBus>();
+    else
+      busPtr = std::make_shared<DragonBus>();
 
-    processor = {std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize, busPtr};
+    processor = {std::ifstream(coreBenchmarkFile), pid++, associativity, numBlocks, blockSize};
   }
 }
 
-bool ProcessorPool::processorsDone() {
+bool System::processorsDone() {
   return std::ranges::all_of(processors, [](const Processor& processor) {
     return processor.blockingInstruction.type == Instruction::InstructionType::DONE;
   });
 }
 
-void ProcessorPool::run() {
+auto System::blockedFor(uint32_t pid) -> uint32_t {
+  return bus->cyclesToWaitFor(processors, pid, processors[pid].cache.blockOperation);
+}
+
+void System::transitionCacheStates(uint32_t pid) {}
+
+void System::run() {
   while (!processorsDone())
-    for (auto& processor : processors) processor.runOneCycle();
+    for (auto& processor : processors) { processor.runOneCycle(); }
 }
 }// namespace CacheSim

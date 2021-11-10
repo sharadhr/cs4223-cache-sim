@@ -24,7 +24,6 @@ struct Instruction {
 
 class Processor {
  public:
-  uint8_t pid{};
   uint32_t cycleCount{};
   Cache cache;
   Instruction blockingInstruction{Instruction::InstructionType::ALU, 0};
@@ -32,9 +31,8 @@ class Processor {
 
   Processor() = default;
   Processor(const std::ifstream& filePathName, uint8_t pid, uint8_t associativity, uint32_t numBlocks,
-            uint16_t blockSize, std::shared_ptr<Bus>& bus) :
-      cache(pid, bus, associativity, numBlocks, blockSize),
-      pid{pid} {
+            uint16_t blockSize) :
+      cache(pid, associativity, numBlocks, blockSize) {
     instructionStream << filePathName.rdbuf();
   }
   void runOneCycle();
@@ -46,6 +44,8 @@ class Processor {
 
   Instruction getNextInstruction();
   void issueNextInstruction();
+
+  friend class System;
 };
 }// namespace CacheSim
 

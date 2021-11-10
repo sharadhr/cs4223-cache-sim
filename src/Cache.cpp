@@ -26,7 +26,7 @@ uint32_t Cache::getIndexOfBlockInSet(uint32_t address) {
 
   for (uint32_t i = 0; i < currentSet.size(); i++) {
     const auto& line = currentSet[i];
-    if (line.blockNum == blockNum && !line.isEmpty && line.state != CacheLine::CacheState::INVALID) return i;
+    if (line.blockNum == blockNum && line.state != CacheLine::CacheState::INVALID) return i;
   }
   return UINT32_MAX;
 }
@@ -38,7 +38,7 @@ bool Cache::has(uint32_t address) {
   std::vector<CacheLine> currentSet = store[setNum];
 
   return std::ranges::all_of(currentSet, [&blockNum](const auto& line) {
-    return line.blockNum == blockNum && !line.isEmpty && line.state != CacheLine::CacheState::INVALID;
+    return line.blockNum == blockNum && line.state != CacheLine::CacheState::INVALID;
   });
 }
 
@@ -55,20 +55,15 @@ CacheLine Cache::createNewLine(uint32_t address, CacheLine::CacheState state) co
 
 void Cache::prRd(uint32_t address) {
   if (has(address)) block(address, 1, CacheOp::PR_RD_HIT);
-  else
-    bus->handlePrdRdMiss(pid, address);
 }
 
 void Cache::prWr(uint32_t address) {
   if (has(address)) block(address, 1, CacheOp::PR_WR_HIT);
-  else
-    bus->handlePrWrMiss(pid, address);
 }
 
 void Cache::update() {
   if (blockedFor > 0) --blockedFor;
   else {
-    issueBusTransaction();
     isBlocked = false;
   }
 }

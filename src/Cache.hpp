@@ -27,10 +27,19 @@ class CacheLine {
 
 class Cache {
  private:
-  uint8_t pid{};
   uint16_t blockSize{32};
   uint32_t numBlocks{4096 / 32};
   uint8_t associativity{2};
+
+  // lruShuffle, writeback write-allocate
+  // blockedFor for eviction
+  void evict(uint32_t);
+
+  void lruShuffle(uint32_t, uint32_t);
+  void lruShuffle(uint32_t);
+
+ public:
+  uint8_t pid{};
 
   bool isBlocked{false};
   uint32_t blockedFor{};
@@ -41,26 +50,16 @@ class Cache {
 
   CacheLine getLine(uint32_t);
 
-  void memWriteBack();
-  void memRead();
-  void issueBusTransaction();
-
-  // lruShuffle, writeback write-allocate
-  void evict(uint32_t);
-
-  // lruShuffle
-  void flush(uint32_t);
-
   void block(uint32_t, uint32_t, CacheOp);
+
+  void block(uint32_t, uint32_t);
 
   CacheLine createNewLine(uint32_t, CacheLine::CacheState) const;
 
   uint32_t getIndexOfBlockInSet(uint32_t);
 
-  void lruShuffle(uint32_t, uint32_t);
-  void lruShuffle(uint32_t);
+  bool needsEviction{false};
 
- public:
   void update();
 
   bool has(uint32_t);
