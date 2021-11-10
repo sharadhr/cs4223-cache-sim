@@ -2,8 +2,6 @@
 
 #include <algorithm>
 
-#include "ProcessorPool.hpp"
-
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
   if (!has(address)) return;
@@ -48,11 +46,6 @@ void Cache::block(uint32_t address, uint32_t blockedForCycles, CacheOp blockOp) 
   blockedFor = blockedForCycles;
 }
 
-CacheLine Cache::createNewLine(uint32_t address, CacheLine::CacheState state) const {
-  uint32_t blockNum = address / blockSize;
-  return {blockNum, state};
-}
-
 void Cache::prRd(uint32_t address) {
   if (has(address)) block(address, 1, CacheOp::PR_RD_HIT);
 }
@@ -63,8 +56,6 @@ void Cache::prWr(uint32_t address) {
 
 void Cache::update() {
   if (blockedFor > 0) --blockedFor;
-  else {
-    isBlocked = false;
-  }
+  else isBlocked = false;
 }
 }// namespace CacheSim
