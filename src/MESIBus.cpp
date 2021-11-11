@@ -2,12 +2,7 @@
 #include "Bus.hpp"
 
 namespace CacheSim {
-std::array<uint32_t, 4> MESIBus::blockCycles(std::array<uint32_t, 4> &currentCycles, uint8_t pid, CacheOp) {
-  return {};
-}
+uint32_t MESIBus::blockedCycles(std::array<std::shared_ptr<Cache>, 4>& processors, uint8_t pid, CacheOp) { return {}; }
 
-std::array<CacheLine::CacheState, 4> MESIBus::transition(std::array<CacheLine::CacheState, 4>& previousCycles,
-                                                         uint8_t pid, CacheOp operation) {
-  return {};
-}
+void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>& caches, uint8_t pid) {}
 }// namespace CacheSim

@@ -21,10 +21,14 @@ class System {
   void run();
 
  private:
-  std::array<Processor, 4> processors;
-  std::unique_ptr<Bus> bus{std::make_unique<MESIBus>()};
+  std::array<Processor, 4> processors{};
+  std::shared_ptr<Bus> bus{};
 
   bool processorsDone();
+  void refresh(Processor& processor);
+  void blockProcessor(Processor& processor);
+  void applyStates(Processor& processor);
+  inline std::array<std::shared_ptr<Cache>, 4> getCaches();
 };
 }// namespace CacheSim
 

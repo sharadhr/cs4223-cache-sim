@@ -9,9 +9,8 @@
 namespace CacheSim {
 class Bus {
  public:
-  virtual std::array<uint32_t, 4> blockCycles(std::array<uint32_t, 4>& currentBlockedCycles, uint8_t pid, CacheOp) = 0;
-  virtual std::array<CacheLine::CacheState, 4> transition(std::array<CacheLine::CacheState, 4>& previousCycles,
-                                                          uint8_t pid, CacheOp operation) = 0;
+  virtual uint32_t blockedCycles(std::array<std::shared_ptr<Cache>, 4>& caches, uint8_t pid, CacheOp) = 0;
+  virtual void transition(std::array<std::shared_ptr<Cache>, 4>& caches, uint8_t pid) = 0;
 
   Bus() = default;
   explicit Bus(uint16_t blockSize) : blockSize(blockSize){};
@@ -26,9 +25,8 @@ class MESIBus : public Bus {
   MESIBus() = default;
   explicit MESIBus(uint16_t blockSize) : Bus(blockSize){};
 
-  std::array<uint32_t, 4> blockCycles(std::array<uint32_t, 4>& currentBlockedCycles, uint8_t pid, CacheOp) override;
-  std::array<CacheLine::CacheState, 4> transition(std::array<CacheLine::CacheState, 4>& previousCycles, uint8_t pid,
-                                                  CacheOp operation) override;
+  uint32_t blockedCycles(std::array<std::shared_ptr<Cache>, 4>& caches, uint8_t pid, CacheOp) override;
+  void transition(std::array<std::shared_ptr<Cache>, 4>& caches, uint8_t pid) override;
 };
 
 class DragonBus : public Bus {
@@ -36,9 +34,8 @@ class DragonBus : public Bus {
   DragonBus() = default;
   explicit DragonBus(uint16_t blockSize) : Bus(blockSize){};
 
-  std::array<uint32_t, 4> blockCycles(std::array<uint32_t, 4>& currentBlockedCycles, uint8_t pid, CacheOp) override;
-  std::array<CacheLine::CacheState, 4> transition(std::array<CacheLine::CacheState, 4>& previousCycles, uint8_t pid,
-                                                  CacheOp operation) override;
+  uint32_t blockedCycles(std::array<std::shared_ptr<Cache>, 4>& caches, uint8_t pid, CacheOp) override;
+  void transition(std::array<std::shared_ptr<Cache>, 4>& caches, uint8_t pid) override;
 };
 }// namespace CacheSim
 

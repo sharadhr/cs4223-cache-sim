@@ -35,27 +35,32 @@ bool Cache::has(uint32_t address) {
 
   std::vector<CacheLine> currentSet = store[setNum];
 
-  return std::ranges::all_of(currentSet, [&blockNum](const auto& line) {
+  return std::ranges::all_of(currentSet, [&blockNum](const CacheLine& line) {
     return line.blockNum == blockNum && line.state != CacheLine::CacheState::INVALID;
   });
 }
 
-void Cache::block(uint32_t address, uint32_t blockedForCycles, CacheOp blockOp) {
+void Cache::block(uint32_t address, uint32_t blockedCycles, CacheOp blockOp) {
   blockedOnAddress = address;
-  blockOperation = blockOp;
-  blockedFor = blockedForCycles;
+  blockedFor = needsWriteback ? blockedCycles + 100 : blockedCycles;
+  blockingOperation = blockOp;
 }
 
-void Cache::prRd(uint32_t address) {
-  if (has(address)) block(address, 1, CacheOp::PR_RD_HIT);
-}
-
-void Cache::prWr(uint32_t address) {
-  if (has(address)) block(address, 1, CacheOp::PR_WR_HIT);
-}
-
-void Cache::update() {
+void Cache::refresh() {
   if (blockedFor > 0) --blockedFor;
-  else isBlocked = false;
+}
+
+bool Cache::needsEviction(uint32_t dirtyAddress) {
+  uint32_t setNum = dirtyAddress / blockSize;
+  return store[setNum][0].state != CacheLine::CacheState::INVALID;
+}
+
+void Cache::evictFor(uint32_t incomingAddress) {
+  uint32_t setNum = incomingAddress / blockSize;
+  if (store[setNum][0].dirty) {
+    block(store[setNum][0].blockNum, 100, CacheOp::PR_WB);
+  } else {
+    block(store[setNum][0].blockNum, 0, CacheOp::PR_WB);
+  }
 }
 }// namespace CacheSim
