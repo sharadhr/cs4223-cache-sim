@@ -71,7 +71,6 @@ class Cache {
     return (address / blockSize) % numSets;
   }
 
-  friend class System;
   friend class Processor;
 };
 }// namespace CacheSim

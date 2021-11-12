@@ -35,7 +35,7 @@ void System::refresh(Processor& processor) {
   auto cache = processor.cache;
 
   // next instruction
-  if (processor.blockedFor == 0 && cache->blockedFor == 0) {
+  if (processor.isBlocked()) {
     applyStates(processor);
 
     processor.fetchInstruction();

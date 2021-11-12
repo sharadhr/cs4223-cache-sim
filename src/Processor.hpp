@@ -33,8 +33,12 @@ class Processor {
   void refresh();
   void fetchInstruction();
   void block(uint32_t blockedCycles);
-  inline CacheOp getCacheOp() const {
+  [[nodiscard]] inline CacheOp getCacheOp() const {
     return cache->getCacheOpFor(blockingInstruction.type, blockingInstruction.value);
+  }
+
+  [[nodiscard]] inline bool isBlocked() const {
+    return blockedFor > 0 || cache->blockedFor > 0;
   }
 
  private:
