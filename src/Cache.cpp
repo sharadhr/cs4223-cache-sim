@@ -1,6 +1,8 @@
 #include "Cache.hpp"
 
 #include <algorithm>
+#include <stdexcept>
+#include <string>
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t blockNum) {
@@ -18,7 +20,7 @@ uint8_t Cache::getBlockWay(uint32_t blockNum) {
   auto setIndex = setIndexFromBlock(blockNum);
   auto currentSet = store[setIndex];
 
-  for (uint32_t i = 0; i < currentSet.size(); i++) {
+  for (uint8_t i = 0; i < currentSet.size(); i++) {
     const auto& line = currentSet[i];
     if (line.blockNum == blockNum && line.state != State::INVALID) return i;
   }
