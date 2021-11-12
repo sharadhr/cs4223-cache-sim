@@ -13,7 +13,7 @@ send from that cache to the requesting cache (see option 1), 100)
 Bus::cyclesToWait(pid, address) 
 
 """
-Run at the end of the wait period of cache block and looks at below fields:
+Run at the end of the wait period of cache setBlock and looks at below fields:
 bool isBlocked{false};
 uint32_t blockedFor{};
 uint32_t blockedOnAddress{};
@@ -27,10 +27,10 @@ And based on the decided states, inserts a new line with a new state in the cach
 """
 Cache::issueBusTransaction()
 
-Cache::prRd(address) ---RdHit--> Cache::block(address, 1) ---wait for those cycles--> Cache::issueBusTransaction()
-Cache::prRd(address) ---RdMiss--> Bus::cyclesToWait() ---> Cache::block(address, blockedFor, RD_MISS) ---wait for those cycles--> Cache::issueBusTransaction()
-Cache::prWr(address) ---WrHit--> Cache::block(address, 1) ---wait for those cycles--> Cache::issueBusTransaction()
-Cache::prWr(address) ---WrMiss--> Bus::cyclesToWait(address, 1) ---> Cache::block(address, blockedFor, WR_MISS) ---wait for those cycles--> Cache::issueBusTransaction()
+Cache::prRd(address) ---RdHit--> Cache::setBlock(address, 1) ---wait for those cycles--> Cache::issueBusTransaction()
+Cache::prRd(address) ---RdMiss--> Bus::cyclesToWait() ---> Cache::setBlock(address, blockedFor, RD_MISS) ---wait for those cycles--> Cache::issueBusTransaction()
+Cache::prWr(address) ---WrHit--> Cache::setBlock(address, 1) ---wait for those cycles--> Cache::issueBusTransaction()
+Cache::prWr(address) ---WrMiss--> Bus::cyclesToWait(address, 1) ---> Cache::setBlock(address, blockedFor, WR_MISS) ---wait for those cycles--> Cache::issueBusTransaction()
 ```
 
 ## System Interactions
@@ -44,7 +44,7 @@ run () {
 
   ## Processor.blockedFor == 0 && Processor.cache.blockedFor == 0 (Unblocked)
   1. Check why it was blocked
-  2. Blocked for cache state transition -> cache.evictionNeed -> cache.needsEviction() -> Bus::transition() -> System::stateTransition(old block) -> Sytem::blockFor(new block) -> Bus::blockedCycles(processors, pid, CacheOp)
+  2. Blocked for cache state transition -> cache.evictionNeed -> cache.needsEvictionFor() -> Bus::transition() -> System::stateTransition(old block) -> Sytem::blockFor(new setBlock) -> Bus::blockedCycles(processors, pid, CacheOp)
   3. Blocked for cache state transition -> !cache.evictionNeed -> Bus::transition -> stateStateTransition -> System::issueNewInstruction()
   4. Blocked for ALU processor, fetchInstruction()
 }
@@ -52,8 +52,8 @@ run () {
 System::issueNewInstruction() {
   # HANDLING NEW INSTRUCTION
   1. Processor.issueNewInstruction() -> set blockingInstruction
-  2. New instruction is LD/ST -> cache sets eviction needed and blocks itself -> cache.needsEviction()
-  2. New instruction is LD/ST -> cache doesnt need eviction -> System.blockedFor() -> processor.cache.block()
+  2. New instruction is LD/ST -> cache sets eviction needed and blocks itself -> cache.needsEvictionFor()
+  2. New instruction is LD/ST -> cache doesnt need eviction -> System.blockedFor() -> processor.cache.setBlock()
   2. New instruction is ALU -> processor.blockedFor and isBlocked
 }
 ```
@@ -62,5 +62,13 @@ System::issueNewInstruction() {
 2. No pipelining
 3. Bus transactions after getting the data
 4. Intermediate bus transactions can cause short circuiting
-5. Snooping on blocknum
+   - Assume that even if data is invalidated/evicted, data still continues to be transmitted
+5. Snooping on blocknum 
+
+```
+E--------I--------I
+I-----------------E
+I-----------------I
+I-----------------I
+```
 

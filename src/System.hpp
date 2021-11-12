@@ -26,9 +26,9 @@ class System {
 
   bool processorsDone();
   void refresh(Processor& processor);
-  void blockProcessor(Processor& processor);
   void applyStates(Processor& processor);
   inline std::array<std::shared_ptr<Cache>, 4> getCaches();
+
 };
 }// namespace CacheSim
 

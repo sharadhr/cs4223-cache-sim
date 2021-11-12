@@ -2,21 +2,22 @@
 
 #include <algorithm>
 
+
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
-  if (!has(address)) return;
+  if (!contains(address)) return;
   auto blockNum = address / blockSize;
   auto setNum = blockNum % numBlocks;
-  auto indexInSet = getIndexOfBlockInSet(address);
+  auto blockIndex = getBlockIndex(address);
 
   std::vector<CacheLine>& currentSet = store[setNum];
 
-  auto line = currentSet[indexInSet];
-  currentSet.erase(currentSet.begin() + indexInSet);
+  auto line = currentSet[blockIndex];
+  currentSet.erase(currentSet.begin() + blockIndex);
   currentSet.push_back(line);
 }
 
-uint32_t Cache::getIndexOfBlockInSet(uint32_t address) {
+uint32_t Cache::getBlockIndex(uint32_t address) {
   auto blockNum = address / blockSize;
   auto setNum = blockNum % numBlocks;
 
@@ -29,7 +30,7 @@ uint32_t Cache::getIndexOfBlockInSet(uint32_t address) {
   return UINT32_MAX;
 }
 
-bool Cache::has(uint32_t address) {
+bool Cache::contains(uint32_t address) {
   uint32_t blockNum = address / blockSize;
   uint32_t setNum = blockNum % numBlocks;
 
@@ -40,27 +41,35 @@ bool Cache::has(uint32_t address) {
   });
 }
 
-void Cache::block(uint32_t address, uint32_t blockedCycles, CacheOp blockOp) {
+void Cache::setBlock(uint32_t address, uint32_t blockedCycles, CacheOp operation) {
   blockedOnAddress = address;
-  blockedFor = needsWriteback ? blockedCycles + 100 : blockedCycles;
-  blockingOperation = blockOp;
+  blockedFor = blockedCycles;
+  blockingOperation = operation;
 }
 
 void Cache::refresh() {
   if (blockedFor > 0) --blockedFor;
 }
 
-bool Cache::needsEviction(uint32_t dirtyAddress) {
-  uint32_t setNum = dirtyAddress / blockSize;
+bool Cache::needsEvictionFor(uint32_t incomingAddress) {
+  uint32_t setNum = incomingAddress / blockSize;
   return store[setNum][0].state != CacheLine::CacheState::INVALID;
 }
 
-void Cache::evictFor(uint32_t incomingAddress) {
+void Cache::evictAndBlock(uint32_t incomingAddress) {
   uint32_t setNum = incomingAddress / blockSize;
-  if (store[setNum][0].dirty) {
-    block(store[setNum][0].blockNum, 100, CacheOp::PR_WB);
-  } else {
-    block(store[setNum][0].blockNum, 0, CacheOp::PR_WB);
+  if (store[setNum][0].dirty) setBlock(store[setNum][0].blockNum, 100, CacheOp::PR_WB);
+  else setBlock(store[setNum][0].blockNum, 0, CacheOp::PR_WB);
+}
+CacheOp Cache::getCacheOpFor(Instruction::InstructionType type, uint32_t address) {
+  switch (type) {
+    case Instruction::InstructionType::LD:
+      return contains(address) ? CacheOp::PR_RD_HIT : CacheOp::PR_RD_MISS;
+    case Instruction::InstructionType::ST:
+      return contains(address) ? CacheOp::PR_WR_HIT : CacheOp::PR_WR_MISS;
+    case Instruction::InstructionType::ALU:
+    case Instruction::InstructionType::DONE:
+      return CacheOp::PR_NULL;
   }
 }
 }// namespace CacheSim

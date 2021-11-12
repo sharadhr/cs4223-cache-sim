@@ -41,7 +41,7 @@ Runner::Arguments Runner::checkArguments(int argc, const char* argv[]) {
                             + std::to_string(arguments.blockSize));
 
   if (arguments.cacheSize % arguments.blockSize)
-    throw std::domain_error("Cache size must be integer multiple of block size (" + argVec[5] + " B). Encountered "
+    throw std::domain_error("Cache size must be integer multiple of setBlock size (" + argVec[5] + " B). Encountered "
                             "value was " + argVec[3]);
 
   if (arguments.numBlocks % arguments.associativity != 0)

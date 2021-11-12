@@ -6,8 +6,10 @@
 #include <queue>
 #include <vector>
 
+#include "Processor.hpp"
+
 namespace CacheSim {
-enum class CacheOp { PR_RD_HIT, PR_WR_HIT, PR_RD_MISS, PR_WR_MISS, PR_WB };
+enum class CacheOp { PR_RD_HIT, PR_WR_HIT, PR_RD_MISS, PR_WR_MISS, PR_WB, PR_NULL };
 
 class CacheLine {
  public:
@@ -40,11 +42,11 @@ class Cache {
     store = std::vector(numBlocks / associativity, std::vector(associativity, CacheLine()));
   }
 
-  void block(uint32_t address, uint32_t blockedCycles, CacheOp operation);
   void refresh();
-  bool needsEviction(uint32_t incomingAddress);
-  void evictFor(uint32_t incomingAddress);
-  bool has(uint32_t address);
+  void setBlock(uint32_t address, uint32_t blockedCycles, CacheOp operation);
+  bool needsEvictionFor(uint32_t incomingAddress);
+  void evictAndBlock(uint32_t incomingAddress);
+  CacheOp getCacheOpFor(Instruction::InstructionType type, uint32_t address);
 
  private:
   uint16_t blockSize{32};
@@ -52,14 +54,12 @@ class Cache {
   uint8_t associativity{2};
   uint32_t blockedFor{};
   uint32_t blockedOnAddress{};
-  bool needsWriteback{};
   CacheOp blockingOperation{CacheOp::PR_RD_MISS};
   std::vector<std::vector<CacheLine>> store;
 
-  CacheLine getLine(uint32_t address);
   void lruShuffle(uint32_t address);
-  uint32_t getIndexOfBlockInSet(uint32_t);
-  CacheOp readWriteOperation(uint32_t address);
+  uint32_t getBlockIndex(uint32_t address);
+  bool contains(uint32_t address);
 
   friend class System;
   friend class Processor;
