@@ -14,7 +14,7 @@ void Processor::refresh() {
       ++monitor.idleCycleCount;
       break;
     case Type::ALU:
-      ++monitor.computeCycleCount;
+      ++monitor.cycleCount;
       break;
     case Type::DONE:
       break;
@@ -36,6 +36,7 @@ void Processor::fetchInstruction() {
 
 void Processor::block(uint32_t blockedCycles) {
   auto cacheOp = getCacheOp();
+
   switch (cacheOp) {
     case CacheOp::PR_RD_HIT:
     case CacheOp::PR_WR_HIT:
@@ -48,6 +49,7 @@ void Processor::block(uint32_t blockedCycles) {
         blockedFor += 100;
         cache->evictFor(blockingInstruction.value);
       }
+      blockedFor += blockedCycles;
       cache->setBlocked(blockingInstruction.value, cacheOp);
       break;
     case CacheOp::PR_WB:
