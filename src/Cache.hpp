@@ -61,15 +61,9 @@ class Cache {
   uint8_t getBlockWay(uint32_t blockNum);
   bool contains(uint32_t blockNum);
 
-  [[nodiscard]] inline uint32_t setIndexFromBlock(uint32_t blockNum) const {
-    return blockNum % numSets;
-  }
+  [[nodiscard]] inline std::vector<CacheLine> setOfBlock(uint32_t blockNum) const { return store[blockNum % numSets]; }
 
-  [[nodiscard]] inline uint32_t setIndexFromAddress(uint32_t address) const {
-    return (address / blockSize) % numSets;
-  }
-
-  friend class Processor;
+  [[nodiscard]] inline uint32_t setIndexFromAddress(uint32_t address) const { return (address / blockSize) % numSets; }
 };
 }// namespace CacheSim
 

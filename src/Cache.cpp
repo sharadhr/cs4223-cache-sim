@@ -7,8 +7,7 @@
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t blockNum) {
   if (!contains(blockNum)) return;
-  auto setIndex = setIndexFromBlock(blockNum);
-  auto currentSet = store[setIndex];
+  auto currentSet = setOfBlock(blockNum);
   auto way = getBlockWay(blockNum);
 
   auto line = currentSet[way];
@@ -17,19 +16,18 @@ void Cache::lruShuffle(uint32_t blockNum) {
 }
 
 uint8_t Cache::getBlockWay(uint32_t blockNum) {
-  auto setIndex = setIndexFromBlock(blockNum);
-  auto currentSet = store[setIndex];
+  auto currentSet = setOfBlock(blockNum);
 
-  for (uint8_t i = 0; i < currentSet.size(); i++) {
-    const auto& line = currentSet[i];
-    if (line.blockNum == blockNum && line.state != State::INVALID) return i;
-  }
-  return UINT8_MAX;
+  auto way = std::distance(currentSet.begin(),
+                           std::find_if(currentSet.begin(), currentSet.end(), [&blockNum](const CacheLine& line) {
+                             return line.state != CacheLine::CacheState::INVALID && line.blockNum == blockNum;
+                           }));
+
+  return way == associativity ? UINT8_MAX : way;
 }
 
 bool Cache::contains(uint32_t blockNum) {
-  auto setIndex = setIndexFromBlock(blockNum);
-  auto currentSet = store[setIndex];
+  auto currentSet = setOfBlock(blockNum);
 
   return std::ranges::any_of(currentSet, [&blockNum](const CacheLine& line) {
     return line.blockNum == blockNum && line.state != State::INVALID;
