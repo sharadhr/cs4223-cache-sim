@@ -14,9 +14,6 @@
 #include "System.hpp"
 
 namespace CacheSim {
-/**
- * Runner
- */
 class Runner {
   struct Arguments {
     std::string_view protocol{"MESI"};
