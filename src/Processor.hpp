@@ -11,23 +11,15 @@
 
 #include "Cache.hpp"
 #include "CoreMonitor.hpp"
+#include "Instruction.hpp"
 
 namespace CacheSim {
-struct Instruction {
-  enum class InstructionType { LD, ST, ALU, DONE };
-  InstructionType type;
-  uint32_t value;
-};
-
-using Type = Instruction::InstructionType;
-
 class Processor {
 
  public:
   uint8_t pid{};
   uint32_t cycleCount{};
-  std::shared_ptr<Cache> cache;
-  Instruction blockingInstruction{Instruction::InstructionType::ALU, 0};
+  Instruction blockingInstruction{Type::ALU, 0};
   CoreMonitor monitor{};
 
   Processor() : cache(std::make_shared<Cache>()) { instructionStream << std::ifstream("data/test_0.data").rdbuf(); };
@@ -41,11 +33,14 @@ class Processor {
   void refresh();
   void fetchInstruction();
   void block(uint32_t blockedCycles);
-  inline CacheOp getCacheOp() const;
+  inline CacheOp getCacheOp() const {
+    return cache->getCacheOpFor(blockingInstruction.type, blockingInstruction.value);
+  }
 
  private:
   uint32_t blockedFor{0};
   std::stringstream instructionStream{};
+  std::shared_ptr<Cache> cache;
 
   friend class System;
 };

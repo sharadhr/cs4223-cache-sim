@@ -27,18 +27,14 @@ void Processor::refresh() {
 }
 
 void Processor::fetchInstruction() {
-  int type;
+  uint8_t type;
   uint32_t value;
 
-  if (instructionStream >> type >> std::hex >> value >> std::dec) blockingInstruction = {Type(type), value};
+  if (instructionStream >> type >> std::hex >> value >> std::dec) blockingInstruction = {type, value};
   else {
     monitor.executionCycleCount = cycleCount;
     blockingInstruction = {Type::DONE, 0};
   }
-}
-
-inline CacheOp Processor::getCacheOp() const {
-  return cache->getCacheOpFor(blockingInstruction.type, blockingInstruction.value);
 }
 
 void Processor::block(uint32_t blockedCycles) {
@@ -46,39 +42,20 @@ void Processor::block(uint32_t blockedCycles) {
   switch (cacheOp) {
     case CacheOp::PR_RD_HIT:
     case CacheOp::PR_WR_HIT:
-      cache->setBlock(blockingInstruction.value, 1, cacheOp);
+      ++blockedFor;
+      cache->setBlocked(blockingInstruction.value, 1, cacheOp);
       break;
     case CacheOp::PR_RD_MISS:
     case CacheOp::PR_WR_MISS:
       if (cache->needsEvictionFor(blockingInstruction.value)) {
         blockedFor += 100;
-        cache->evictAndBlock(blockingInstruction.value);
+        cache->evictFor(blockingInstruction.value);
       }
-      cache->setBlock(blockingInstruction.value, blockedCycles, cacheOp);
+      cache->setBlocked(blockingInstruction.value, blockedCycles, cacheOp);
       break;
     case CacheOp::PR_WB:
     case CacheOp::PR_NULL:
       break;
-
-      // case Type::LD:
-      //   auto cacheOp = getCacheOp();
-      //   if (cache->contains(blockingInstruction.value)) cache->setBlock(blockingInstruction.value, 1, CacheOp::PR_RD_HIT);
-      //   else if (cache->needsEvictionFor(blockingInstruction.value)) {
-      //     blockedFor += 100;
-      //     cache->evictAndBlock(blockingInstruction.value);
-      //   } else cache->setBlock(blockingInstruction.value, blockedCycles, CacheOp::PR_RD_MISS);
-      //   break;
-      // case Type::ST:
-      //   if (cache->contains(blockingInstruction.value)) cache->setBlock(blockingInstruction.value, 1, CacheOp::PR_WR_HIT);
-      //   else if (cache->needsEvictionFor(blockingInstruction.value)) {
-      //     blockedFor += 100;
-      //     cache->evictAndBlock(blockingInstruction.value);
-      //   } else cache->setBlock(blockingInstruction.value, blockedCycles, CacheOp::PR_WR_MISS);
-      //   break;
-      // case Type::ALU:
-      //   blockedFor += blockingInstruction.value;
-      // case Type::DONE:
-      //   break;
   }
 }
 }// namespace CacheSim

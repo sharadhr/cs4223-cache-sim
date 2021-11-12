@@ -57,7 +57,7 @@ void System::applyStates(Processor& processor) {
   switch (processor.blockingInstruction.type) {
     case Type::LD:
     case Type::ST:
-      if (processor.cache->blockingOperation == CacheOp::PR_WB) {
+      if (processor.getCacheOp() == CacheOp::PR_WB) {
         bus->transition(getCaches(), processor.pid);
         processor.block(bus->getBlockedCycles(getCaches(), processor.pid, processor.getCacheOp()));
         return;
