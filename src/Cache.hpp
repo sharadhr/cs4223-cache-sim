@@ -63,11 +63,11 @@ class Cache {
   uint8_t getBlockWay(uint32_t blockNum);
   bool contains(uint32_t blockNum);
 
-  inline uint32_t setIndexFromBlock(uint32_t blockNum) {
+  [[nodiscard]] inline uint32_t setIndexFromBlock(uint32_t blockNum) const {
     return blockNum % numSets;
   }
 
-  inline uint32_t setIndexFromAddress(uint32_t address) {
+  [[nodiscard]] inline uint32_t setIndexFromAddress(uint32_t address) const {
     return (address / blockSize) % numSets;
   }
 
