@@ -20,10 +20,7 @@ void Processor::refresh() {
       break;
   }
 
-  if (blockedFor > 0 && cache->blockedFor > 0) {
-    --blockedFor;
-    cache->refresh();
-  }
+  if (blockedFor > 0) --blockedFor;
 }
 
 void Processor::fetchInstruction() {
@@ -43,7 +40,7 @@ void Processor::block(uint32_t blockedCycles) {
     case CacheOp::PR_RD_HIT:
     case CacheOp::PR_WR_HIT:
       ++blockedFor;
-      cache->setBlocked(blockingInstruction.value, 1, cacheOp);
+      cache->setBlocked(blockingInstruction.value, cacheOp);
       break;
     case CacheOp::PR_RD_MISS:
     case CacheOp::PR_WR_MISS:
@@ -51,7 +48,7 @@ void Processor::block(uint32_t blockedCycles) {
         blockedFor += 100;
         cache->evictFor(blockingInstruction.value);
       }
-      cache->setBlocked(blockingInstruction.value, blockedCycles, cacheOp);
+      cache->setBlocked(blockingInstruction.value, cacheOp);
       break;
     case CacheOp::PR_WB:
     case CacheOp::PR_NULL:

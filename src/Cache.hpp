@@ -43,8 +43,7 @@ class Cache {
     store = std::vector(numBlocks / associativity, std::vector(associativity, CacheLine()));
   }
 
-  void refresh();
-  void setBlocked(uint32_t address, uint32_t blockedCycles, CacheOp operation);
+  void setBlocked(uint32_t address, CacheOp operation);
   bool needsEvictionFor(uint32_t incomingAddress);
   void evictFor(uint32_t incomingAddress);
   CacheOp getCacheOpFor(const Type &type, uint32_t address);
@@ -54,8 +53,7 @@ class Cache {
   uint32_t numBlocks{4096 / 32};
   uint32_t numSets{1};
   uint8_t associativity{2};
-  uint32_t blockedFor{};
-  uint32_t blockedOnBlock{};
+  uint32_t blockingCacheBlock{};
   CacheOp blockingOperation{CacheOp::PR_RD_MISS};
   std::vector<std::vector<CacheLine>> store;
 

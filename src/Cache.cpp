@@ -7,7 +7,7 @@
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t blockNum) {
   if (!contains(blockNum)) return;
-  auto setIndex = blockNum % numBlocks;
+  auto setIndex = setIndexFromBlock(blockNum);
   auto currentSet = store[setIndex];
   auto way = getBlockWay(blockNum);
 
@@ -36,14 +36,9 @@ bool Cache::contains(uint32_t blockNum) {
   });
 }
 
-void Cache::setBlocked(uint32_t address, uint32_t blockedCycles, CacheOp operation) {
-  blockedOnBlock = address / blockSize;
-  blockedFor = blockedCycles;
+void Cache::setBlocked(uint32_t address, CacheOp operation) {
+  blockingCacheBlock = address / blockSize;
   blockingOperation = operation;
-}
-
-void Cache::refresh() {
-  if (blockedFor > 0) --blockedFor;
 }
 
 bool Cache::needsEvictionFor(uint32_t incomingAddress) {
@@ -55,8 +50,8 @@ void Cache::evictFor(uint32_t incomingAddress) {
   uint32_t setIndex = setIndexFromAddress(incomingAddress);
   if (store[setIndex][0].state == State::MODIFIED
       || store[setIndex][0].state == CacheLine::CacheState::SHARED_MODIFIED) {
-    setBlocked(store[setIndex][0].blockNum, 100, CacheOp::PR_WB);
-  } else setBlocked(store[setIndex][0].blockNum, 0, CacheOp::PR_WB);
+    setBlocked(store[setIndex][0].blockNum, CacheOp::PR_WB);
+  } else setBlocked(store[setIndex][0].blockNum, CacheOp::PR_WB);
 }
 
 CacheOp Cache::getCacheOpFor(const Type& type, uint32_t address) {
