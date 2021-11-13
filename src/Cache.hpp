@@ -14,6 +14,7 @@ class CacheLine {
  public:
   enum class CacheState {
     MODIFIED,
+    OWNED,
     SHARED,
     SHARED_MODIFIED,
     INVALID,
@@ -51,6 +52,8 @@ class Cache {
   CacheOp getCacheOpFor(const Type &type, uint32_t address);
 
   bool containsAddress(uint32_t blockNum);
+
+  State getState(uint32_t address);
 
   void insertLine(uint32_t address, State state);
   void updateLine(uint32_t address, State state);

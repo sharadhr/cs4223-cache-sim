@@ -98,4 +98,12 @@ void Cache::removeLine(uint32_t address) {
   line.state = State::INVALID;
   currentSet.insert(currentSet.begin(), line);
 }
+
+CacheLine::CacheState Cache::getState(uint32_t address) {
+  uint32_t blockNum = address / blockSize;
+  auto currentSet = setOfBlock(blockNum);
+  auto way = getBlockWay(address);
+  return currentSet[way].state;
+}
+
 }// namespace CacheSim

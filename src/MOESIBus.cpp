@@ -35,7 +35,11 @@ void MOESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_
       for (int i = 0; i < 4; i++) {
         if (i != pid && caches[i]->containsAddress(address)) {
           anyCacheContains = true;
-          caches[i]->updateLine(address, CacheLine::CacheState::SHARED);
+          if (caches[i]->getState(address) == CacheLine::CacheState::MODIFIED) {
+            caches[i]->updateLine(address, CacheLine::CacheState::OWNED);
+          } else {
+            caches[i]->updateLine(address, CacheLine::CacheState::SHARED);
+          }
         }
       }
       if (anyCacheContains) {
@@ -45,16 +49,31 @@ void MOESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_
       }
     }
 
-    case CacheOp::PR_WR_MISS:
+    case CacheOp::PR_WR_MISS: {
+      bool anyCacheContains = false;
+      for (int i = 0; i < 4; i++) {
+        if (i != pid && caches[i]->containsAddress(address)) {
+          anyCacheContains = true;
+          caches[i]->updateLine(address, CacheLine::CacheState::SHARED);
+        }
+      }
+      if (anyCacheContains) caches[pid]->updateLine(address, CacheLine::CacheState::OWNED);
+      else
+        caches[pid]->updateLine(address, CacheLine::CacheState::MODIFIED);
+      caches[pid]->lruShuffle(address);
+      break;
+    }
     case CacheOp::PR_WR_HIT: {
       bool anyCacheContains = false;
       for (int i = 0; i < 4; i++) {
         if (i != pid && caches[i]->containsAddress(address)) {
           anyCacheContains = true;
-          caches[i]->removeLine(address);
+          caches[i]->updateLine(address, CacheLine::CacheState::SHARED);
         }
       }
-      caches[pid]->insertLine(address, CacheLine::CacheState::MODIFIED);
+      if (anyCacheContains) caches[pid]->insertLine(address, CacheLine::CacheState::OWNED);
+      else
+        caches[pid]->insertLine(address, CacheLine::CacheState::MODIFIED);
       break;
     }
     case CacheOp::PR_WB: {
@@ -66,7 +85,13 @@ void MOESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_
       }
 
       if (blocksToUpdate.size() > 1) break;
-      for (auto id : blocksToUpdate) caches[id]->updateLine(address, CacheLine::CacheState::EXCLUSIVE);
+
+      for (auto id : blocksToUpdate) {
+        if (caches[id]->getState(address) == CacheLine::CacheState::OWNED)
+          caches[id]->updateLine(address, CacheLine::CacheState::MODIFIED);
+        else
+          caches[id]->updateLine(address, CacheLine::CacheState::EXCLUSIVE);
+      }
     }
 
     case CacheOp::PR_NULL:

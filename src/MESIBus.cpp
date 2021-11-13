@@ -45,8 +45,19 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
       }
     }
 
-    case CacheOp::PR_WR_MISS:
     case CacheOp::PR_WR_HIT: {
+      bool anyCacheContains = false;
+      for (int i = 0; i < 4; i++) {
+        if (i != pid && caches[i]->containsAddress(address)) {
+          anyCacheContains = true;
+          caches[i]->removeLine(address);
+        }
+      }
+      caches[pid]->updateLine(address, CacheLine::CacheState::MODIFIED);
+      caches[pid]->lruShuffle(address);
+      break;
+    }
+    case CacheOp::PR_WR_MISS: {
       bool anyCacheContains = false;
       for (int i = 0; i < 4; i++) {
         if (i != pid && caches[i]->containsAddress(address)) {
