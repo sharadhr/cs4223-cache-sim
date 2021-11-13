@@ -34,7 +34,7 @@ bool System::processorsDone() {
 
 void System::refresh(Processor& processor) {
   // next instruction
-  if (processor.isBlocked()) {
+  if (!processor.isBlocked()) {
     applyStates(processor);
 
     if (processor.getCacheOp() != CacheOp::PR_WB) processor.fetchInstruction();
