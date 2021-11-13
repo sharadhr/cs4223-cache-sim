@@ -18,7 +18,7 @@ uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cache
     case CacheOp::PR_WR_MISS:
       bool anyCacheContains = false;
       for (int i = 0; i < 4; i++) {
-        if (i != pid && caches[i]->containsAddress(address)) anyCacheContains = true;
+        if (caches[i]->containsAddress(address)) anyCacheContains = true;
       }
       return anyCacheContains ? 2 * blockSize / 4 : 100;
   }
