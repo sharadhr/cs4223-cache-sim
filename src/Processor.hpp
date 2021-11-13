@@ -1,9 +1,4 @@
-//
-// Created by sharadh on 20/10/21.
-//
-
-#ifndef CS4223_CACHE_SIM_PROCESSOR_HPP
-#define CS4223_CACHE_SIM_PROCESSOR_HPP
+#pragma once
 
 #include <cstdint>
 #include <fstream>
@@ -48,5 +43,3 @@ class Processor {
   friend class System;
 };
 }// namespace CacheSim
-
-#endif//CS4223_CACHE_SIM_PROCESSOR_HPP

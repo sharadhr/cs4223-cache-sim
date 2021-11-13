@@ -1,5 +1,4 @@
-#ifndef CS4223_CACHE_SIM_BUS_HPP
-#define CS4223_CACHE_SIM_BUS_HPP
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -44,5 +43,3 @@ class DragonBus : public Bus {
  private:
 };
 }// namespace CacheSim
-
-#endif

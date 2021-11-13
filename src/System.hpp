@@ -1,9 +1,4 @@
-//
-// Created by sharadh on 20/10/21.
-//
-
-#ifndef CS4223_CACHE_SIM_SYSTEM_HPP
-#define CS4223_CACHE_SIM_SYSTEM_HPP
+#pragma once
 
 #include <array>
 #include <filesystem>
@@ -32,5 +27,3 @@ class System {
   };
 };
 }// namespace CacheSim
-
-#endif//CS4223_CACHE_SIM_SYSTEM_HPP

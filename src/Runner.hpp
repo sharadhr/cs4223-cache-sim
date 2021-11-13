@@ -1,9 +1,4 @@
-//
-// Created by sharadh on 20/10/21.
-//
-
-#ifndef CS4223_CACHE_SIM_RUNNER_HPP
-#define CS4223_CACHE_SIM_RUNNER_HPP
+#pragma once
 
 #include <cstdint>
 #include <filesystem>
@@ -42,5 +37,3 @@ class Runner {
   CacheSim::System simSystem;
 };
 }// namespace CacheSim
-
-#endif//CS4223_CACHE_SIM_RUNNER_HPP

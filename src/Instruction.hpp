@@ -1,5 +1,4 @@
-#ifndef CS4223_CACHE_SIM_INSTRUCTION_HPP
-#define CS4223_CACHE_SIM_INSTRUCTION_HPP
+#pragma once
 
 namespace CacheSim {
 struct Instruction {
@@ -14,5 +13,3 @@ struct Instruction {
 
 using Type = Instruction::InstructionType;
 }// namespace CacheSim
-
-#endif//CS4223_CACHE_SIM_INSTRUCTION_HPP

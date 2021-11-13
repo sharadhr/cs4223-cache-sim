@@ -1,5 +1,4 @@
-#ifndef CS4223_CACHE_SIM_CACHE_HPP
-#define CS4223_CACHE_SIM_CACHE_HPP
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -66,5 +65,3 @@ class Cache {
   [[nodiscard]] inline uint32_t setIndexFromAddress(uint32_t address) const { return (address / blockSize) % numSets; }
 };
 }// namespace CacheSim
-
-#endif
