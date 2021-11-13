@@ -42,4 +42,16 @@ class DragonBus : public Bus {
 
  private:
 };
+
+class MOESIBus : public Bus {
+ public:
+  MOESIBus() = default;
+  ~MOESIBus() override = default;
+  explicit MOESIBus(uint16_t blockSize) : Bus(blockSize){};
+
+  uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp, uint32_t) override;
+  void transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) override;
+
+ private:
+};
 }// namespace CacheSim
