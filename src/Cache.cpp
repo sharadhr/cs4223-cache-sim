@@ -23,7 +23,7 @@ uint8_t Cache::getBlockWay(uint32_t blockNum) {
                              return line.state != CacheLine::CacheState::INVALID && line.blockNum == blockNum;
                            }));
 
-  return way == associativity ? UINT8_MAX : way;
+  return static_cast<uint8_t>(0 > way && way < associativity ? way : UINT8_MAX);
 }
 
 bool Cache::contains(uint32_t blockNum) {
