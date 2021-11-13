@@ -32,6 +32,7 @@ class CacheLine {
 
 class Cache {
   using State = CacheLine::CacheState;
+
  public:
   Cache() = default;
   Cache(uint8_t associativity, uint32_t numBlocks, uint16_t blockSize) :
@@ -47,6 +48,8 @@ class Cache {
   void evictFor(uint32_t incomingAddress);
   CacheOp getCacheOpFor(const Type &type, uint32_t address);
 
+  bool containsAddress(uint32_t blockNum);
+
  private:
   uint16_t blockSize{32};
   uint32_t numBlocks{4096 / 32};
@@ -58,7 +61,8 @@ class Cache {
 
   void lruShuffle(uint32_t blockNum);
   uint8_t getBlockWay(uint32_t blockNum);
-  bool contains(uint32_t blockNum);
+
+  bool containsBlock(uint32_t blockNum);
 
   [[nodiscard]] inline std::vector<CacheLine> setOfBlock(uint32_t blockNum) const { return store[blockNum % numSets]; }
 

@@ -6,7 +6,7 @@
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t blockNum) {
-  if (!contains(blockNum)) return;
+  if (!containsBlock(blockNum)) return;
   auto currentSet = setOfBlock(blockNum);
   auto way = getBlockWay(blockNum);
 
@@ -26,7 +26,12 @@ uint8_t Cache::getBlockWay(uint32_t blockNum) {
   return static_cast<uint8_t>(0 > way && way < associativity ? way : UINT8_MAX);
 }
 
-bool Cache::contains(uint32_t blockNum) {
+bool Cache::containsAddress(uint32_t address) {
+  auto blockNum = address / blockSize;
+  return containsBlock(blockNum);
+}
+
+bool Cache::containsBlock(uint32_t blockNum) {
   auto currentSet = setOfBlock(blockNum);
 
   return std::ranges::any_of(currentSet, [&blockNum](const CacheLine& line) {
@@ -56,9 +61,9 @@ void Cache::evictFor(uint32_t incomingAddress) {
 CacheOp Cache::getCacheOpFor(const Type& type, uint32_t address) {
   switch (type) {
     case Type::LD:
-      return contains(address) ? CacheOp::PR_RD_HIT : CacheOp::PR_RD_MISS;
+      return containsAddress(address) ? CacheOp::PR_RD_HIT : CacheOp::PR_RD_MISS;
     case Type::ST:
-      return contains(address) ? CacheOp::PR_WR_HIT : CacheOp::PR_WR_MISS;
+      return containsAddress(address) ? CacheOp::PR_WR_HIT : CacheOp::PR_WR_MISS;
     case Type::ALU:
     case Type::DONE:
       return CacheOp::PR_NULL;
