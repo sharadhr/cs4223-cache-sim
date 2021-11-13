@@ -21,5 +21,5 @@ uint32_t DragonBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cac
   }
 }
 
-void DragonBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid) {}
+void DragonBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) {}
 }// namespace CacheSim
