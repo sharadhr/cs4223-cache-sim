@@ -1,7 +1,7 @@
 #include "Bus.hpp"
 
 namespace CacheSim {
-uint32_t DragonBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, CacheOp cacheOp,
+uint32_t DragonBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp,
                                      uint32_t address) {
   switch (cacheOp) {
     case CacheOp::PR_WB:

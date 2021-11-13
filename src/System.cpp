@@ -38,7 +38,8 @@ void System::refresh(Processor& processor) {
     applyStates(processor);
 
     if (processor.getCacheOp() != CacheOp::PR_WB) processor.fetchInstruction();
-    auto blockingCycles = bus->getBlockedCycles(getCaches(), processor.pid, processor.getCacheOp());
+    auto blockingCycles =
+        bus->getBlockedCycles(getCaches(), processor.getCacheOp(), processor.blockingInstruction.value);
     processor.block(blockingCycles);
   }
 
@@ -63,7 +64,6 @@ void System::applyStates(Processor& processor) {
       return;
     case CacheOp::PR_WB:
       bus->transition(getCaches(), processor.pid);
-      processor.block(bus->getBlockedCycles(getCaches(), processor.pid, cacheOp));
       return;
     case CacheOp::PR_NULL:
       return;
