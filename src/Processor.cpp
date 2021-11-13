@@ -46,14 +46,16 @@ void Processor::block(uint32_t blockedCycles) {
     case CacheOp::PR_RD_MISS:
     case CacheOp::PR_WR_MISS:
       if (cache->needsEvictionFor(blockingInstruction.value)) {
-        blockedFor += 100;
+        blockedFor = 100;
         cache->evictFor(blockingInstruction.value);
+        return;
       }
-      blockedFor += blockedCycles;
+      blockedFor = blockedCycles;
       cache->setBlocked(blockingInstruction.value, cacheOp);
       break;
     case CacheOp::PR_WB:
     case CacheOp::PR_NULL:
+      if (blockingInstruction.type == Type::ALU) blockedFor = blockingInstruction.value;
       break;
   }
 }

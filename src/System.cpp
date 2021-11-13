@@ -23,7 +23,8 @@ System::System(const std::filesystem::path& benchmark, std::string_view protocol
   }
 
   if (protocol == "MESI") bus = std::make_shared<MESIBus>(blockSize);
-  else bus = std::make_shared<DragonBus>(blockSize);
+  else
+    bus = std::make_shared<DragonBus>(blockSize);
 }
 
 bool System::processorsDone() {
@@ -36,7 +37,7 @@ void System::refresh(Processor& processor) {
   if (processor.isBlocked()) {
     applyStates(processor);
 
-    processor.fetchInstruction();
+    if (processor.getCacheOp() != CacheOp::PR_WB) processor.fetchInstruction();
     auto blockingCycles = bus->getBlockedCycles(getCaches(), processor.pid, processor.getCacheOp());
     processor.block(blockingCycles);
   }

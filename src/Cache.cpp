@@ -46,10 +46,11 @@ bool Cache::needsEvictionFor(uint32_t incomingAddress) {
 
 void Cache::evictFor(uint32_t incomingAddress) {
   uint32_t setIndex = setIndexFromAddress(incomingAddress);
+  // TODO:  Check if Sm requires WB
   if (store[setIndex][0].state == State::MODIFIED
       || store[setIndex][0].state == CacheLine::CacheState::SHARED_MODIFIED) {
     setBlocked(store[setIndex][0].blockNum, CacheOp::PR_WB);
-  } else setBlocked(store[setIndex][0].blockNum, CacheOp::PR_WB);
+  }
 }
 
 CacheOp Cache::getCacheOpFor(const Type& type, uint32_t address) {
