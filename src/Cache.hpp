@@ -34,6 +34,8 @@ class Cache {
   using State = CacheLine::CacheState;
 
  public:
+  CacheOp blockingOperation{CacheOp::PR_RD_MISS};
+
   Cache() = default;
   Cache(uint8_t associativity, uint32_t numBlocks, uint16_t blockSize) :
       blockSize(blockSize),
@@ -50,16 +52,20 @@ class Cache {
 
   bool containsAddress(uint32_t blockNum);
 
+  void insertLine(uint32_t address, State state);
+  void updateLine(uint32_t address, State state);
+  void removeLine(uint32_t address);
+
+  void lruShuffle(uint32_t address);
+
  private:
   uint16_t blockSize{32};
   uint32_t numBlocks{4096 / 32};
   uint32_t numSets{1};
   uint8_t associativity{2};
   uint32_t blockingCacheBlock{};
-  CacheOp blockingOperation{CacheOp::PR_RD_MISS};
   std::vector<std::vector<CacheLine>> store;
 
-  void lruShuffle(uint32_t blockNum);
   uint8_t getBlockWay(uint32_t blockNum);
 
   bool containsBlock(uint32_t blockNum);

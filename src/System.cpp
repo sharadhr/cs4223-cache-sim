@@ -54,19 +54,6 @@ void System::run() {
 
 void System::applyStates(Processor& processor) {
   auto cacheOp = processor.getCacheOp();
-
-  switch (cacheOp) {
-    case CacheOp::PR_RD_HIT:
-    case CacheOp::PR_WR_HIT:
-    case CacheOp::PR_RD_MISS:
-    case CacheOp::PR_WR_MISS:
-      bus->transition(getCaches(), processor.pid);
-      return;
-    case CacheOp::PR_WB:
-      bus->transition(getCaches(), processor.pid);
-      return;
-    case CacheOp::PR_NULL:
-      return;
-  }
+  if (cacheOp != CacheOp::PR_NULL) bus->transition(getCaches(), processor.pid, processor.blockingInstruction.value);
 }
 }// namespace CacheSim

@@ -5,7 +5,8 @@
 #include <string>
 
 namespace CacheSim {
-void Cache::lruShuffle(uint32_t blockNum) {
+void Cache::lruShuffle(uint32_t address) {
+  auto blockNum = address / blockSize;
   if (!containsBlock(blockNum)) return;
   auto currentSet = setOfBlock(blockNum);
   auto way = getBlockWay(blockNum);
@@ -70,5 +71,31 @@ CacheOp Cache::getCacheOpFor(const Type& type, uint32_t address) {
     default:
       throw std::invalid_argument("Invalid instruction type value: " + std::to_string(static_cast<uint32_t>(type)));
   }
+}
+
+void Cache::insertLine(uint32_t address, State state) {
+  uint32_t blockNum = address / blockSize;
+  auto currentSet = setOfBlock(blockNum);
+
+  currentSet.erase(currentSet.begin());
+  currentSet.push_back(CacheLine(state, blockNum));
+}
+
+void Cache::updateLine(uint32_t address, State state) {
+  uint32_t blockNum = address / blockSize;
+  auto currentSet = setOfBlock(blockNum);
+  auto way = getBlockWay(address);
+
+  currentSet[way].state = state;
+}
+void Cache::removeLine(uint32_t address) {
+  uint32_t blockNum = address / blockSize;
+  auto currentSet = setOfBlock(blockNum);
+  auto way = getBlockWay(address);
+
+  auto line = currentSet[way];
+  currentSet.erase(currentSet.begin() + way);
+  line.state = State::INVALID;
+  currentSet.insert(currentSet.begin(), line);
 }
 }// namespace CacheSim
