@@ -77,6 +77,7 @@ void MOESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_
       break;
     }
     case CacheOp::PR_WB: {
+      // SOII -> IMII
       // SSII -> IEII
       std::vector<uint8_t> blocksToUpdate;
 
