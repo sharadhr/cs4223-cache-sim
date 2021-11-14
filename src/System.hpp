@@ -23,7 +23,6 @@ class System {
 
   bool processorsDone();
   void refresh(Processor& processor);
-  void applyStates(Processor& processor);
   inline std::array<std::shared_ptr<Cache>, 4> getCaches() {
     return {processors[0].cache, processors[1].cache, processors[2].cache, processors[3].cache};
   };

@@ -12,7 +12,7 @@ void Cache::lruShuffle(uint32_t address) {
   auto blockNum = address / blockSize;
   if (!containsBlock(blockNum)) return;
   auto& currentSet = setOfBlock(blockNum);
-  auto way = getBlockWay(blockNum);
+  auto way = getBlockWaySus(blockNum);
 
   auto line = currentSet[way];
   currentSet.erase(currentSet.begin() + way);
@@ -26,6 +26,16 @@ uint8_t Cache::getBlockWay(uint32_t blockNum) {
                            std::find_if(currentSet.begin(), currentSet.end(), [&blockNum](const CacheLine& line) {
                              return line.state != CacheLine::CacheState::INVALID && line.blockNum == blockNum;
                            }));
+
+  return static_cast<uint8_t>(0 <= way && way < associativity ? way : UINT8_MAX);
+}
+
+uint8_t Cache::getBlockWaySus(uint32_t blockNum) {
+  auto currentSet = setOfBlock(blockNum);
+
+  auto way = std::distance(currentSet.begin(),
+                           std::find_if(currentSet.begin(), currentSet.end(),
+                                        [&blockNum](const CacheLine& line) { return line.blockNum == blockNum; }));
 
   return static_cast<uint8_t>(0 <= way && way < associativity ? way : UINT8_MAX);
 }
@@ -86,14 +96,14 @@ void Cache::updateLine(uint32_t address, State state) {
   assert(containsAddress(address));
   uint32_t blockNum = address / blockSize;
   auto setIndex = setIndexFromAddress(address);
-  auto way = getBlockWay(blockNum);
+  auto way = getBlockWaySus(blockNum);
 
   store[setIndex][way].state = state;
 }
 void Cache::removeLine(uint32_t address) {
   uint32_t blockNum = address / blockSize;
   auto setIndex = setIndexFromAddress(address);
-  auto way = getBlockWay(blockNum);
+  auto way = getBlockWaySus(blockNum);
 
   auto line = store[setIndex][way];
 

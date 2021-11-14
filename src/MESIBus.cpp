@@ -4,21 +4,22 @@
 #include "Bus.hpp"
 
 namespace CacheSim {
-uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address) {
+uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address,
+                                   uint8_t drop_pid) {
   switch (cacheOp) {
     case CacheOp::PR_WB:
-      monitor.trafficBytes += blockSize;
+      // monitor.trafficBytes += blockSize;
     case CacheOp::PR_NULL:
       return 0;
     case CacheOp::PR_RD_HIT:
       return 1;
     case CacheOp::PR_WR_HIT: {
-      monitor.trafficBytes += blockSize;
+      // monitor.trafficBytes += blockSize;
       return 1;
     }
     case CacheOp::PR_RD_MISS:
     case CacheOp::PR_WR_MISS: {
-      monitor.trafficBytes += blockSize;
+      // monitor.trafficBytes += blockSize;
       bool anyCacheContains = false;
       for (int i = 0; i < 4; i++) {
         if (caches[i]->containsAddress(address)) anyCacheContains = true;
@@ -29,9 +30,9 @@ uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cache
 }
 
 void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) {
-#ifndef NDEBUG
-  printDebug(std::move(caches), pid, address);
-#endif
+
+  printDebug(caches, pid, address);
+
   switch (caches[pid]->blockingOperation) {
     case CacheOp::PR_NULL:
       return;
@@ -58,7 +59,7 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
     case CacheOp::PR_WR_MISS: {
       for (int i = 0; i < 4; i++) {
         if (i != pid && caches[i]->containsAddress(address)) {
-          monitor.numOfInvalidationsOrUpdates++;
+          // monitor.numOfInvalidationsOrUpdates++;
           caches[i]->removeLine(address);
         }
       }
@@ -75,8 +76,6 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
       for (auto id : blocksToUpdate) caches[id]->updateLine(address, CacheLine::CacheState::EXCLUSIVE);
     }
   }
-#ifndef NDEBUG
-  printDebug(std::move(caches), pid, address);
-#endif
+  printDebug(caches, pid, address);
 }
 }// namespace CacheSim

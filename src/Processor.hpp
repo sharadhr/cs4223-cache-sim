@@ -22,7 +22,7 @@ class Processor {
   Processor(uint8_t pid, const std::ifstream& filePathName, uint8_t associativity, uint32_t numBlocks,
             uint16_t blockSize) :
       pid(pid),
-      cache(std::make_shared<Cache>(associativity, numBlocks, blockSize)) {
+      cache(std::make_shared<Cache>(pid, associativity, numBlocks, blockSize)) {
     instructionStream << filePathName.rdbuf();
   }
 
