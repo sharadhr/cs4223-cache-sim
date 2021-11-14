@@ -28,18 +28,19 @@ System::System(const std::filesystem::path& benchmark, std::string_view protocol
 }
 
 bool System::processorsDone() {
-  return std::ranges::all_of(processors,
-                             [](const auto& processor) { return processor.blockingInstruction.type == Type::DONE; });
+  return std::ranges::all_of(
+      processors, [](const Processor& processor) { return processor.blockingInstruction.type == Type::DONE; });
 }
 
 void System::refresh(Processor& processor) {
   // next instruction
   if (!processor.isBlocked()) {
-    applyStates(processor);
+    if (processor.getCacheOp() != CacheOp::PR_NULL)
+      bus->transition(getCaches(), processor.pid, processor.blockingInstruction.value);
 
     if (processor.getCacheOp() != CacheOp::PR_WB) processor.fetchInstruction();
     auto blockingCycles =
-        bus->getBlockedCycles(getCaches(), processor.getCacheOp(), processor.blockingInstruction.value);
+        bus->getBlockedCycles(getCaches(), processor.getCacheOp(), processor.blockingInstruction.value, 0);
     processor.block(blockingCycles);
   }
 
@@ -48,12 +49,6 @@ void System::refresh(Processor& processor) {
 }
 
 void System::run() {
-  while (!processorsDone())
-    std::for_each(processors.begin(), processors.end(), [&](Processor& processor) { refresh(processor); });
-}
-
-void System::applyStates(Processor& processor) {
-  auto cacheOp = processor.getCacheOp();
-  if (cacheOp != CacheOp::PR_NULL) bus->transition(getCaches(), processor.pid, processor.blockingInstruction.value);
+  while (!processorsDone()) std::ranges::for_each(processors, [&](Processor& processor) { refresh(processor); });
 }
 }// namespace CacheSim
