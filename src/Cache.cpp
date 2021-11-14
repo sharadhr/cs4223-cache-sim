@@ -1,6 +1,7 @@
 #include "Cache.hpp"
 
 #include <algorithm>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -59,7 +60,7 @@ void Cache::evictFor(uint32_t incomingAddress) {
   }
 }
 
-CacheOp Cache::getCacheOpFor(const Type& type, uint32_t address) {
+CacheOp Cache::getCacheOpFor(const Type type, uint32_t address) {
   switch (type) {
     case Type::LD:
       return containsAddress(address) ? CacheOp::PR_RD_HIT : CacheOp::PR_RD_MISS;

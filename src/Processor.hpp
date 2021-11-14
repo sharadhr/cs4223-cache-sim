@@ -29,6 +29,8 @@ class Processor {
   void fetchInstruction();
   void block(uint32_t blockedCycles);
 
+  void printData();
+
   [[nodiscard]] inline CacheOp getCacheOp() const {
     return cache->getCacheOpFor(blockingInstruction.type, blockingInstruction.value);
   }

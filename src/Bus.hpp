@@ -6,10 +6,19 @@
 #include "Cache.hpp"
 
 namespace CacheSim {
+struct BusMonitor {
+  uint32_t trafficBytes{0};
+  uint32_t numOfInvalidationsOrUpdates{0};
+  uint32_t privateDataAccessCount{0};
+  uint32_t sharedDataAccessCount{0};
+};
+
 class Bus {
  public:
   virtual uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp, uint32_t address) = 0;
   virtual void transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) = 0;
+
+  BusMonitor monitor;
 
   Bus() = default;
   explicit Bus(uint16_t blockSize) : blockSize(blockSize){};

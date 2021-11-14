@@ -4,6 +4,8 @@
 
 #include "Processor.hpp"
 
+#include <iostream>
+
 namespace CacheSim {
 void Processor::refresh() {
   ++cycleCount;
@@ -17,19 +19,29 @@ void Processor::refresh() {
       ++monitor.cycleCount;
       break;
     case Type::DONE:
-      break;
+      return;
   }
+
+  if (blockingInstruction.type != Type::DONE) monitor.executionCycleCount++;
 
   if (blockedFor > 0) --blockedFor;
 }
 
 void Processor::fetchInstruction() {
-  uint8_t type;
+  int type;
   uint32_t value;
 
-  if (instructionStream >> type >> std::hex >> value >> std::dec) blockingInstruction = {type, value};
-  else {
-    monitor.executionCycleCount = cycleCount;
+  if (instructionStream >> type >> std::hex >> value >> std::dec) {
+    blockingInstruction = {static_cast<uint8_t>(type), value};
+    switch (blockingInstruction.type) {
+      case Instruction::InstructionType::LD:
+      case Instruction::InstructionType::ST:
+        monitor.loadStoreCount++;
+      case Instruction::InstructionType::ALU:
+      case Instruction::InstructionType::DONE:
+        break;
+    }
+  } else {
     blockingInstruction = {Type::DONE, 0};
   }
 }
@@ -58,5 +70,10 @@ void Processor::block(uint32_t blockedCycles) {
       if (blockingInstruction.type == Type::ALU) blockedFor = blockingInstruction.value;
       break;
   }
+}
+
+void Processor::printData() {
+  std::cout << monitor.executionCycleCount << "," << monitor.cycleCount << "," << monitor.idleCycleCount << ","
+            << monitor.loadStoreCount << std::endl;
 }
 }// namespace CacheSim

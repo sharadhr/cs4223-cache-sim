@@ -49,7 +49,7 @@ class Cache {
   void setBlocked(uint32_t address, CacheOp operation);
   bool needsEvictionFor(uint32_t incomingAddress);
   void evictFor(uint32_t incomingAddress);
-  CacheOp getCacheOpFor(const Type &type, uint32_t address);
+  CacheOp getCacheOpFor(const Type type, uint32_t address);
 
   bool containsAddress(uint32_t blockNum);
 

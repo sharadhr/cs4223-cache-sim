@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace CacheSim {
 struct Instruction {
   enum class InstructionType { LD, ST, ALU, DONE };

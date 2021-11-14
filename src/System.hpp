@@ -19,6 +19,8 @@ class System {
   std::array<Processor, 4> processors{};
   std::shared_ptr<Bus> bus{};
 
+  void printPostRunStats();
+
   bool processorsDone();
   void refresh(Processor& processor);
   void applyStates(Processor& processor);

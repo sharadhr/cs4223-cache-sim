@@ -1,8 +1,12 @@
 #include "System.hpp"
 
+#include <bits/ranges_algo.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <filesystem>
+#include <iostream>
+#include <iterator>
 #include <stdexcept>
 
 namespace CacheSim {
@@ -23,8 +27,7 @@ System::System(const std::filesystem::path& benchmark, std::string_view protocol
   }
 
   if (protocol == "MESI") bus = std::make_shared<MESIBus>(blockSize);
-  else
-    bus = std::make_shared<DragonBus>(blockSize);
+  else bus = std::make_shared<DragonBus>(blockSize);
 }
 
 bool System::processorsDone() {
@@ -50,10 +53,24 @@ void System::refresh(Processor& processor) {
 void System::run() {
   while (!processorsDone())
     std::for_each(processors.begin(), processors.end(), [&](Processor& processor) { refresh(processor); });
+
+  printPostRunStats();
 }
 
 void System::applyStates(Processor& processor) {
   auto cacheOp = processor.getCacheOp();
   if (cacheOp != CacheOp::PR_NULL) bus->transition(getCaches(), processor.pid, processor.blockingInstruction.value);
+}
+
+void System::printPostRunStats() {
+  std::cout << "executionCycles,computeCycles,idleCycles,loadStoreCount" << std::endl;
+  for (auto i = 0; i < 4; i++) { processors[i].printData(); }
+  std::cout << "totalTime,"
+            << std::ranges::max_element(processors.begin(), processors.end(),
+                                        [](const Processor& p1, const Processor& p2) {
+                                          return p1.monitor.executionCycleCount < p2.monitor.executionCycleCount;
+                                        })
+                   ->monitor.executionCycleCount
+            << std::endl;
 }
 }// namespace CacheSim
