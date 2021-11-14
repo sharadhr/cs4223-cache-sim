@@ -13,12 +13,12 @@ enum class CacheOp { PR_RD_HIT, PR_WR_HIT, PR_RD_MISS, PR_WR_MISS, PR_WB, PR_NUL
 class CacheLine {
  public:
   enum class CacheState {
-    MODIFIED,
-    OWNED,
-    SHARED,
-    SHARED_MODIFIED,
     INVALID,
+    MODIFIED,
+    SHARED,
     EXCLUSIVE,
+    SHARED_MODIFIED,
+    OWNED,
   };
 
  private:
@@ -73,7 +73,7 @@ class Cache {
 
   bool containsBlock(uint32_t blockNum);
 
-  [[nodiscard]] inline std::vector<CacheLine> setOfBlock(uint32_t blockNum) const { return store[blockNum % numSets]; }
+  [[nodiscard]] inline std::vector<CacheLine>& setOfBlock(uint32_t blockNum) { return store[blockNum % numSets]; }
 
   [[nodiscard]] inline uint32_t setIndexFromAddress(uint32_t address) const { return (address / blockSize) % numSets; }
 };

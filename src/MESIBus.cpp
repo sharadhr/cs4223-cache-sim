@@ -47,6 +47,7 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
       } else {
         caches[pid]->insertLine(address, CacheLine::CacheState::EXCLUSIVE);
       }
+      break;
     }
     case CacheOp::PR_WR_HIT:
     case CacheOp::PR_WR_MISS: {

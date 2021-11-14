@@ -9,7 +9,7 @@ namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
   auto blockNum = address / blockSize;
   if (!containsBlock(blockNum)) return;
-  auto currentSet = setOfBlock(blockNum);
+  auto& currentSet = setOfBlock(blockNum);
   auto way = getBlockWay(blockNum);
 
   auto line = currentSet[way];
@@ -25,7 +25,7 @@ uint8_t Cache::getBlockWay(uint32_t blockNum) {
                              return line.state != CacheLine::CacheState::INVALID && line.blockNum == blockNum;
                            }));
 
-  return static_cast<uint8_t>(0 > way && way < associativity ? way : UINT8_MAX);
+  return static_cast<uint8_t>(0 <= way && way < associativity ? way : UINT8_MAX);
 }
 
 bool Cache::containsAddress(uint32_t address) {
@@ -76,35 +76,36 @@ CacheOp Cache::getCacheOpFor(const Type type, uint32_t address) {
 
 void Cache::insertLine(uint32_t address, State state) {
   uint32_t blockNum = address / blockSize;
-  auto currentSet = setOfBlock(blockNum);
+  auto setIndex = setIndexFromAddress(address);
 
-  currentSet.erase(currentSet.begin());
-  currentSet.push_back(CacheLine(state, blockNum));
+  store[setIndex].erase(store[setIndex].begin());
+  store[setIndex].push_back(CacheLine(state, blockNum));
 }
 
 void Cache::updateLine(uint32_t address, State state) {
   uint32_t blockNum = address / blockSize;
-  auto currentSet = setOfBlock(blockNum);
-  auto way = getBlockWay(address);
+  auto setIndex = setIndexFromAddress(address);
+  auto way = getBlockWay(blockNum);
 
-  currentSet[way].state = state;
+  store[setIndex][way].state = state;
 }
 void Cache::removeLine(uint32_t address) {
   uint32_t blockNum = address / blockSize;
-  auto currentSet = setOfBlock(blockNum);
-  auto way = getBlockWay(address);
+  auto setIndex = setIndexFromAddress(address);
+  auto way = getBlockWay(blockNum);
 
-  auto line = currentSet[way];
-  currentSet.erase(currentSet.begin() + way);
+  auto line = store[setIndex][way];
+
+  store[setIndex].erase(store[setIndex].begin() + way);
   line.state = State::INVALID;
-  currentSet.insert(currentSet.begin(), line);
+  store[setIndex].insert(store[setIndex].begin(), line);
 }
 
 CacheLine::CacheState Cache::getState(uint32_t address) {
   uint32_t blockNum = address / blockSize;
-  auto currentSet = setOfBlock(blockNum);
-  auto way = getBlockWay(address);
-  return currentSet[way].state;
+  auto setIndex = setIndexFromAddress(address);
+  auto way = getBlockWay(blockNum);
+  return way == UINT8_MAX ? State::INVALID : store[setIndex][way].state;
 }
 
 }// namespace CacheSim

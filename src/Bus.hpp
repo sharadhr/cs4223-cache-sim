@@ -1,7 +1,5 @@
-#pragma once
-
-#include <array>
 #include <cstdint>
+#include <iostream>
 
 #include "Cache.hpp"
 
@@ -17,6 +15,12 @@ class Bus {
  public:
   virtual uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp, uint32_t address) = 0;
   virtual void transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) = 0;
+  void printDebug(std::array<std::shared_ptr<Cache>, 4>&& caches, uint32_t pid, uint32_t address) {
+    std::cout << address << " " << pid << " ";
+    std::for_each(caches.begin(), caches.end(),
+                  [address](const std::shared_ptr<Cache> cache) { std::cout << (int) cache->getState(address); });
+    std::cout << std::endl;
+  }
 
   BusMonitor monitor;
 
