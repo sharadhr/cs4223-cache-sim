@@ -1,12 +1,10 @@
 #include "System.hpp"
 
-#include <bits/ranges_algo.h>
-
 #include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <iostream>
-#include <iterator>
+#include <ranges>
 #include <stdexcept>
 
 namespace CacheSim {

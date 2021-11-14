@@ -1,15 +1,14 @@
 #include "Cache.hpp"
 
-#include <assert.h>
-
 #include <algorithm>
-#include <iostream>
+#include <cassert>
 #include <stdexcept>
 #include <string>
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
-  assert(containsAddress(address));
+  if (!containsAddress(address)) throw std::domain_error("Shuffle on nonexistent address: " + std::to_string(address));
+  // assert(containsAddress(address));
   auto blockNum = address / blockSize;
   if (!containsBlock(blockNum)) return;
   auto& currentSet = setOfBlock(blockNum);
