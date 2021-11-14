@@ -30,14 +30,16 @@ class CacheLine {
   friend class Cache;
 };
 
-class Cache {
-  using State = CacheLine::CacheState;
+using State = CacheLine::CacheState;
 
+class Cache {
  public:
+  uint8_t pid{};
   CacheOp blockingOperation{CacheOp::PR_RD_MISS};
 
   Cache() = default;
-  Cache(uint8_t associativity, uint32_t numBlocks, uint16_t blockSize) :
+  Cache(uint8_t pid, uint8_t associativity, uint32_t numBlocks, uint16_t blockSize) :
+      pid(pid),
       blockSize(blockSize),
       numBlocks(numBlocks),
       numSets(numBlocks / associativity),
@@ -50,13 +52,12 @@ class Cache {
   void evictFor(uint32_t incomingAddress);
   CacheOp getCacheOpFor(const Type &type, uint32_t address);
 
-  bool containsAddress(uint32_t blockNum);
-
+  bool containsAddress(uint32_t address);
   void insertLine(uint32_t address, State state);
   void updateLine(uint32_t address, State state);
   void removeLine(uint32_t address);
-
   void lruShuffle(uint32_t address);
+  State getState(uint32_t address);
 
  private:
   uint16_t blockSize{32};

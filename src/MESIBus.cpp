@@ -4,7 +4,8 @@
 #include "Bus.hpp"
 
 namespace CacheSim {
-uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address) {
+uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address,
+                                   uint8_t drop_pid) {
   switch (cacheOp) {
     case CacheOp::PR_WB:
     case CacheOp::PR_NULL:

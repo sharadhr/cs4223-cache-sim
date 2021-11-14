@@ -2,14 +2,28 @@
 
 #include <array>
 #include <cstdint>
+#include <ranges>
 
 #include "Cache.hpp"
 
 namespace CacheSim {
 class Bus {
  public:
-  virtual uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp, uint32_t address) = 0;
+  virtual uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp, uint32_t address,
+                                    uint8_t drop_pid) = 0;
   virtual void transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) = 0;
+
+  auto inline otherCachesContaining(std::array<std::shared_ptr<Cache>, 4>& caches, uint8_t drop_pid, uint32_t address) {
+    return caches | std::views::filter([&](std::shared_ptr<Cache>& cachePtr) {
+             return cachePtr->containsAddress(address) && cachePtr->pid != drop_pid;
+           });
+  };
+
+  bool inline doOtherCachesContain(std::array<std::shared_ptr<Cache>, 4>& caches, uint8_t drop_pid, uint32_t address) {
+    return std::ranges::any_of(caches, [&](std::shared_ptr<Cache>& cachePtr) {
+      return cachePtr->containsAddress(address) && cachePtr->pid != drop_pid;
+    });
+  };
 
   Bus() = default;
   explicit Bus(uint16_t blockSize) : blockSize(blockSize){};
@@ -17,6 +31,7 @@ class Bus {
 
  protected:
   uint16_t blockSize{32};
+  std::array<std::shared_ptr<Cache>, 4> busCaches;
 };
 
 class MESIBus : public Bus {
@@ -25,7 +40,8 @@ class MESIBus : public Bus {
   ~MESIBus() override = default;
   explicit MESIBus(uint16_t blockSize) : Bus(blockSize){};
 
-  uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp, uint32_t) override;
+  uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp, uint32_t,
+                            uint8_t drop_pid) override;
   void transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) override;
 
  private:
@@ -37,8 +53,9 @@ class DragonBus : public Bus {
   ~DragonBus() override = default;
   explicit DragonBus(uint16_t blockSize) : Bus(blockSize){};
 
-  uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp, uint32_t) override;
-  void transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) override;
+  uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address,
+                            uint8_t drop_pid) override;
+  void transition(std::array<std::shared_ptr<Cache>, 4>&& cachePtr, uint8_t pid, uint32_t address) override;
 
  private:
 };
