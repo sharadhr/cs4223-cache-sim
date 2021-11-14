@@ -7,10 +7,10 @@
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
-  if (!containsAddress(address)) throw std::domain_error("Shuffle on nonexistent address: " + std::to_string(address));
-  // assert(containsAddress(address));
   auto blockNum = address / blockSize;
-  if (!containsBlock(blockNum)) return;
+  if (!containsBlockSus(blockNum))
+    throw std::domain_error("Shuffle on nonexistent address: " + std::to_string(address));
+  // if (!containsBlock(blockNum)) return;
   auto& currentSet = setOfBlock(blockNum);
   auto way = getBlockWaySus(blockNum);
 
@@ -52,6 +52,8 @@ bool Cache::containsBlock(uint32_t blockNum) {
     return line.blockNum == blockNum && line.state != State::INVALID;
   });
 }
+
+bool Cache::containsBlockSus(uint32_t blockNum) { return getBlockWaySus(blockNum) != UINT8_MAX; }
 
 void Cache::setBlocked(uint32_t address, CacheOp operation) {
   blockingCacheBlock = address / blockSize;

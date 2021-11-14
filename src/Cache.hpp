@@ -72,6 +72,7 @@ class Cache {
   uint8_t getBlockWaySus(uint32_t blockNum);
 
   bool containsBlock(uint32_t blockNum);
+  bool containsBlockSus(uint32_t blockNum);
 
   [[nodiscard]] inline std::vector<CacheLine>& setOfBlock(uint32_t blockNum) { return store[blockNum % numSets]; }
 
