@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cstdint>
 #include <filesystem>
+#include <iostream>
+#include <ranges>
 #include <stdexcept>
 
 namespace CacheSim {
@@ -23,8 +25,7 @@ System::System(const std::filesystem::path& benchmark, std::string_view protocol
   }
 
   if (protocol == "MESI") bus = std::make_shared<MESIBus>(blockSize);
-  else
-    bus = std::make_shared<DragonBus>(blockSize);
+  else bus = std::make_shared<DragonBus>(blockSize);
 }
 
 bool System::processorsDone() {
@@ -50,5 +51,19 @@ void System::refresh(Processor& processor) {
 
 void System::run() {
   while (!processorsDone()) std::ranges::for_each(processors, [&](Processor& processor) { refresh(processor); });
+
+  printPostRunStats();
+}
+
+void System::printPostRunStats() {
+  std::cout << "executionCycles,computeCycles,idleCycles,loadStoreCount" << std::endl;
+  for (auto i = 0; i < 4; i++) { processors[i].printData(); }
+  std::cout << "totalTime,"
+            << std::ranges::max_element(processors.begin(), processors.end(),
+                                        [](const Processor& p1, const Processor& p2) {
+                                          return p1.monitor.executionCycleCount < p2.monitor.executionCycleCount;
+                                        })
+                   ->monitor.executionCycleCount
+            << std::endl;
 }
 }// namespace CacheSim

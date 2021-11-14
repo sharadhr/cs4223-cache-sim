@@ -1,14 +1,17 @@
 #include "Cache.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <stdexcept>
 #include <string>
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
+  if (!containsAddress(address)) throw std::domain_error("Shuffle on nonexistent address: " + std::to_string(address));
+  // assert(containsAddress(address));
   auto blockNum = address / blockSize;
   if (!containsBlock(blockNum)) return;
-  auto currentSet = setOfBlock(blockNum);
+  auto& currentSet = setOfBlock(blockNum);
   auto way = getBlockWay(blockNum);
 
   auto line = currentSet[way];
@@ -24,7 +27,7 @@ uint8_t Cache::getBlockWay(uint32_t blockNum) {
                              return line.state != CacheLine::CacheState::INVALID && line.blockNum == blockNum;
                            }));
 
-  return static_cast<uint8_t>(0 > way && way < associativity ? way : UINT8_MAX);
+  return static_cast<uint8_t>(0 <= way && way < associativity ? way : UINT8_MAX);
 }
 
 bool Cache::containsAddress(uint32_t address) {
@@ -52,17 +55,15 @@ bool Cache::needsEvictionFor(uint32_t incomingAddress) {
 
 void Cache::evictFor(uint32_t incomingAddress) {
   uint32_t setIndex = setIndexFromAddress(incomingAddress);
-  // TODO:  Check if Sm requires WB
-  if (store[setIndex][0].state == State::MODIFIED
-      || store[setIndex][0].state == CacheLine::CacheState::SHARED_MODIFIED) {
-    setBlocked(store[setIndex][0].blockNum, CacheOp::PR_WB);
-  }
+  setBlocked(store[setIndex][0].blockNum, CacheOp::PR_WB);
 }
 
-CacheOp Cache::getCacheOpFor(const Type& type, uint32_t address) {
+CacheOp Cache::getCacheOpFor(const Type type, uint32_t address) {
   switch (type) {
-    case Type::LD:
-      return containsAddress(address) ? CacheOp::PR_RD_HIT : CacheOp::PR_RD_MISS;
+    case Type::LD: {
+      auto result = containsAddress(address) ? CacheOp::PR_RD_HIT : CacheOp::PR_RD_MISS;
+      return result;
+    }
     case Type::ST:
       return containsAddress(address) ? CacheOp::PR_WR_HIT : CacheOp::PR_WR_MISS;
     case Type::ALU:
@@ -75,31 +76,37 @@ CacheOp Cache::getCacheOpFor(const Type& type, uint32_t address) {
 
 void Cache::insertLine(uint32_t address, State state) {
   uint32_t blockNum = address / blockSize;
-  auto currentSet = setOfBlock(blockNum);
+  auto setIndex = setIndexFromAddress(address);
 
-  currentSet.erase(currentSet.begin());
-  currentSet.push_back(CacheLine(state, blockNum));
+  store[setIndex].erase(store[setIndex].begin());
+  store[setIndex].push_back(CacheLine(state, blockNum));
 }
 
 void Cache::updateLine(uint32_t address, State state) {
+  assert(containsAddress(address));
   uint32_t blockNum = address / blockSize;
-  auto currentSet = setOfBlock(blockNum);
-  auto way = getBlockWay(address);
+  auto setIndex = setIndexFromAddress(address);
+  auto way = getBlockWay(blockNum);
 
-  currentSet[way].state = state;
+  store[setIndex][way].state = state;
 }
 void Cache::removeLine(uint32_t address) {
   uint32_t blockNum = address / blockSize;
-  auto currentSet = setOfBlock(blockNum);
-  auto way = getBlockWay(address);
+  auto setIndex = setIndexFromAddress(address);
+  auto way = getBlockWay(blockNum);
 
-  auto line = currentSet[way];
-  currentSet.erase(currentSet.begin() + way);
+  auto line = store[setIndex][way];
+
+  store[setIndex].erase(store[setIndex].begin() + way);
   line.state = State::INVALID;
-  currentSet.insert(currentSet.begin(), line);
+  store[setIndex].insert(store[setIndex].begin(), line);
 }
-State Cache::getState(uint32_t address) {
-  auto blockNum = address / blockSize;
-  return setOfBlock(blockNum)[getBlockWay(blockNum)].state;
+
+CacheLine::CacheState Cache::getState(uint32_t address) {
+  uint32_t blockNum = address / blockSize;
+  auto setIndex = setIndexFromAddress(address);
+  auto way = getBlockWay(blockNum);
+  return way == UINT8_MAX ? State::INVALID : store[setIndex][way].state;
 }
+
 }// namespace CacheSim
