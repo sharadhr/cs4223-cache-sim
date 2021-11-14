@@ -41,10 +41,8 @@ void System::refresh(Processor& processor) {
     applyStates(processor);
 
     if (processor.getCacheOp() != CacheOp::PR_WB) processor.fetchInstruction();
-    std::cout << "Running getBlockedFor" << std::endl;
     auto blockingCycles =
         bus->getBlockedCycles(getCaches(), processor.getCacheOp(), processor.blockingInstruction.value);
-    std::cout << "Blocked for: " << blockingCycles << std::endl;
     processor.block(blockingCycles);
   }
 
