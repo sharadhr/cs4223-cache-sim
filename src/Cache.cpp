@@ -1,5 +1,7 @@
 #include "Cache.hpp"
 
+#include <assert.h>
+
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
@@ -7,6 +9,8 @@
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
+  /* std::cout << "Shuffle address: " << address << std::endl; */
+  assert(containsAddress(address));
   auto blockNum = address / blockSize;
   if (!containsBlock(blockNum)) return;
   auto& currentSet = setOfBlock(blockNum);
@@ -37,6 +41,8 @@ bool Cache::containsBlock(uint32_t blockNum) {
   auto currentSet = setOfBlock(blockNum);
 
   return std::ranges::any_of(currentSet, [&blockNum](const CacheLine& line) {
+    /* std::cout << blockNum << " " << line.blockNum << " " << (int) line.state << " " */
+    /*           << (int) (line.blockNum == blockNum && line.state != State::INVALID) << std::endl; */
     return line.blockNum == blockNum && line.state != State::INVALID;
   });
 }
@@ -62,9 +68,14 @@ void Cache::evictFor(uint32_t incomingAddress) {
 
 CacheOp Cache::getCacheOpFor(const Type type, uint32_t address) {
   switch (type) {
-    case Type::LD:
-      return containsAddress(address) ? CacheOp::PR_RD_HIT : CacheOp::PR_RD_MISS;
+    case Type::LD: {
+      /* std::cout << "Address LD: " << address << std::endl; */
+      auto result = containsAddress(address) ? CacheOp::PR_RD_HIT : CacheOp::PR_RD_MISS;
+      /* std::cout << "RESULT: " << (int) result << std::endl; */
+      return result;
+    }
     case Type::ST:
+      /* std::cout << "Address ST: " << address << std::endl; */
       return containsAddress(address) ? CacheOp::PR_WR_HIT : CacheOp::PR_WR_MISS;
     case Type::ALU:
     case Type::DONE:
@@ -83,6 +94,7 @@ void Cache::insertLine(uint32_t address, State state) {
 }
 
 void Cache::updateLine(uint32_t address, State state) {
+  assert(containsAddress(address));
   uint32_t blockNum = address / blockSize;
   auto setIndex = setIndexFromAddress(address);
   auto way = getBlockWay(blockNum);
