@@ -4,11 +4,14 @@
 #include <cstdint>
 #include <ranges>
 
+#include "BusMonitor.hpp"
 #include "Cache.hpp"
 
 namespace CacheSim {
 class Bus {
  public:
+  BusMonitor monitor{};
+
   virtual uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp, uint32_t address,
                                     uint8_t drop_pid) = 0;
   virtual void transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) = 0;
