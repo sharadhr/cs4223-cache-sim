@@ -17,7 +17,7 @@ uint32_t DragonBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cac
 }
 
 void DragonBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) {
-  printDebug(caches, pid, address);
+  /* printDebug(caches, pid, address); */
   auto triggeringCache = caches[pid];
   auto drop_pid = pid;
 
@@ -81,6 +81,24 @@ void DragonBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8
     case CacheOp::PR_NULL:
       break;
   }
-  printDebug(caches, pid, address);
+  /* printDebug(caches, pid, address); */
+}
+
+void DragonBus::handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) {
+  // SSII -> IEII
+  caches[pid]->removeLineForBlock(blockNum);
+
+  std::vector<uint8_t> blocksToUpdate;
+  for (int i = 0; i < 4; i++)
+    if (i != pid && caches[i]->containsBlock(blockNum)) blocksToUpdate.push_back(i);
+
+  if (blocksToUpdate.size() > 1) return;
+  for (auto id : blocksToUpdate) {
+    if (caches[id]->getStateOfBlock(blockNum) == State::SHARED_MODIFIED) {
+      caches[id]->updateLineForBlock(blockNum, CacheLine::CacheState::MODIFIED);
+    } else if (caches[id]->getStateOfBlock(blockNum) == State::SHARED) {
+      caches[id]->updateLineForBlock(blockNum, CacheLine::CacheState::EXCLUSIVE);
+    }
+  }
 }
 }// namespace CacheSim

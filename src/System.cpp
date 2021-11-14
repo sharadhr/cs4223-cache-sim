@@ -36,12 +36,34 @@ bool System::processorsDone() {
 void System::refresh(Processor& processor) {
   // next instruction
   if (!processor.isBlocked()) {
-    if (processor.getCacheOp() != CacheOp::PR_NULL)
+    if (processor.cache->blockingOperation != CacheOp::PR_NULL)
       bus->transition(getCaches(), processor.pid, processor.blockingInstruction.value);
 
-    if (processor.getCacheOp() != CacheOp::PR_WB) processor.fetchInstruction();
-    auto blockingCycles =
-        bus->getBlockedCycles(getCaches(), processor.getCacheOp(), processor.blockingInstruction.value, 0);
+    processor.fetchInstruction();
+    processor.cache->setCacheOpFor(processor.blockingInstruction.type, processor.blockingInstruction.value);
+
+    switch (processor.cache->blockingOperation) {
+      case CacheOp::PR_RD_MISS:
+      case CacheOp::PR_WR_MISS: {
+        if (processor.cache->needsEvictionFor(processor.blockingInstruction.value)) {
+          bool needsWriteBack = processor.cache->needsWriteBack(processor.blockingInstruction.value);
+          bus->handleEviction(getCaches(), processor.pid,
+                              processor.cache->evictedBlock(processor.blockingInstruction.value));
+
+          if (needsWriteBack) {
+            processor.monitor.evictionCount++;
+            processor.block(100);
+            return;
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    auto blockingCycles = bus->getBlockedCycles(getCaches(), processor.cache->blockingOperation,
+                                                processor.blockingInstruction.value, processor.pid);
     processor.block(blockingCycles);
   }
 
@@ -56,7 +78,7 @@ void System::run() {
 }
 
 void System::printPostRunStats() {
-  std::cout << "executionCycles,computeCycles,idleCycles,loadStoreCount" << std::endl;
+  std::cout << "executionCycles\tcomputeCycles\tidleCycles\tloadStoreCount\tmissCount\thitCount\n";
   for (auto i = 0; i < 4; i++) { processors[i].printData(); }
   std::cout << "totalTime,"
             << std::ranges::max_element(processors,

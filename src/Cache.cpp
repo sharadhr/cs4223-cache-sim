@@ -7,10 +7,10 @@
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
-  if (!containsAddress(address)) throw std::domain_error("Shuffle on nonexistent address: " + std::to_string(address));
-  // assert(containsAddress(address));
   auto blockNum = address / blockSize;
-  if (!containsBlock(blockNum)) return;
+  if (!containsBlockSus(blockNum))
+    throw std::domain_error("Shuffle on nonexistent address: " + std::to_string(address));
+  // assert(containsAddress(address));
   auto& currentSet = setOfBlock(blockNum);
   auto way = getBlockWaySus(blockNum);
 
@@ -53,32 +53,39 @@ bool Cache::containsBlock(uint32_t blockNum) {
   });
 }
 
-void Cache::setBlocked(uint32_t address, CacheOp operation) {
-  blockingCacheBlock = address / blockSize;
-  blockingOperation = operation;
-}
+bool Cache::containsBlockSus(uint32_t blockNum) { return getBlockWaySus(blockNum) != UINT8_MAX; }
 
 bool Cache::needsEvictionFor(uint32_t incomingAddress) {
   auto setIndex = setIndexFromAddress(incomingAddress);
   return store[setIndex][0].state != State::INVALID;
 }
 
-void Cache::evictFor(uint32_t incomingAddress) {
+bool Cache::needsWriteBack(uint32_t incomingAddress) {
   uint32_t setIndex = setIndexFromAddress(incomingAddress);
-  setBlocked(store[setIndex][0].blockNum, CacheOp::PR_WB);
+  return store[setIndex][0].state == State::MODIFIED;
 }
 
-CacheOp Cache::getCacheOpFor(const Type type, uint32_t address) {
+uint32_t Cache::evictedBlock(uint32_t incomingAddress) {
+  uint32_t setIndex = setIndexFromAddress(incomingAddress);
+  return store[setIndex][0].blockNum;
+}
+
+void Cache::setCacheOpFor(const Type type, uint32_t address) {
+  blockingCacheBlock = address / blockSize;
   switch (type) {
     case Type::LD: {
-      auto result = containsAddress(address) ? CacheOp::PR_RD_HIT : CacheOp::PR_RD_MISS;
-      return result;
+      blockingOperation = containsAddress(address) ? CacheOp::PR_RD_HIT : CacheOp::PR_RD_MISS;
+      break;
     }
-    case Type::ST:
-      return containsAddress(address) ? CacheOp::PR_WR_HIT : CacheOp::PR_WR_MISS;
+    case Type::ST: {
+      blockingOperation = containsAddress(address) ? CacheOp::PR_WR_HIT : CacheOp::PR_WR_MISS;
+      break;
+    }
     case Type::ALU:
-    case Type::DONE:
-      return CacheOp::PR_NULL;
+    case Type::DONE: {
+      blockingOperation = CacheOp::PR_NULL;
+      break;
+    }
     default:
       throw std::invalid_argument("Invalid instruction type value: " + std::to_string(static_cast<uint32_t>(type)));
   }
@@ -93,16 +100,29 @@ void Cache::insertLine(uint32_t address, State state) {
 }
 
 void Cache::updateLine(uint32_t address, State state) {
-  assert(containsAddress(address));
   uint32_t blockNum = address / blockSize;
-  auto setIndex = setIndexFromAddress(address);
+  updateLineForBlock(blockNum, state);
+}
+
+void Cache::updateLineForBlock(uint32_t blockNum, State state) {
+  if (!containsBlockSus(blockNum))
+    throw std::domain_error("Update on nonexistent blockNum: " + std::to_string(blockNum));
+  auto setIndex = blockNum % numSets;
   auto way = getBlockWaySus(blockNum);
 
   store[setIndex][way].state = state;
 }
+
 void Cache::removeLine(uint32_t address) {
   uint32_t blockNum = address / blockSize;
-  auto setIndex = setIndexFromAddress(address);
+  removeLineForBlock(blockNum);
+}
+
+void Cache::removeLineForBlock(uint32_t blockNum) {
+  if (!containsBlockSus(blockNum))
+    throw std::domain_error("Update on nonexistent blockNum: " + std::to_string(blockNum));
+
+  auto setIndex = blockNum % numSets;
   auto way = getBlockWaySus(blockNum);
 
   auto line = store[setIndex][way];
@@ -114,7 +134,11 @@ void Cache::removeLine(uint32_t address) {
 
 CacheLine::CacheState Cache::getState(uint32_t address) {
   uint32_t blockNum = address / blockSize;
-  auto setIndex = setIndexFromAddress(address);
+  return getStateOfBlock(blockNum);
+}
+
+CacheLine::CacheState Cache::getStateOfBlock(uint32_t blockNum) {
+  auto setIndex = blockNum % numSets;
   auto way = getBlockWay(blockNum);
   return way == UINT8_MAX ? State::INVALID : store[setIndex][way].state;
 }

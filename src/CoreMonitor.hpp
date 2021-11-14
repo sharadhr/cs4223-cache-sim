@@ -9,6 +9,9 @@ class CoreMonitor {
   uint64_t cycleCount{};
   uint64_t idleCycleCount{};
   uint64_t loadStoreCount{};
+  uint32_t missCount{};
+  uint32_t hitCount{};
+  uint32_t evictionCount{};
 
   friend class Processor;
 };

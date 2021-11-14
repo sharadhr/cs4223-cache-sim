@@ -36,7 +36,7 @@ using State = CacheLine::CacheState;
 class Cache {
  public:
   uint8_t pid{};
-  CacheOp blockingOperation{CacheOp::PR_RD_MISS};
+  CacheOp blockingOperation{CacheOp::PR_NULL};
 
   Cache() = default;
   Cache(uint8_t pid, uint8_t associativity, uint32_t numBlocks, uint16_t blockSize) :
@@ -51,14 +51,20 @@ class Cache {
   void setBlocked(uint32_t address, CacheOp operation);
   bool needsEvictionFor(uint32_t incomingAddress);
   void evictFor(uint32_t incomingAddress);
-  CacheOp getCacheOpFor(const Type type, uint32_t address);
+  bool needsWriteBack(uint32_t incomingAddress);
+  uint32_t evictedBlock(uint32_t incomingAddress);
+  void setCacheOpFor(const Type type, uint32_t address);
+  void removeLineForBlock(uint32_t blockNum);
 
   bool containsAddress(uint32_t address);
+  bool containsBlock(uint32_t blockNum);
   void insertLine(uint32_t address, State state);
   void updateLine(uint32_t address, State state);
+  void updateLineForBlock(uint32_t blockNum, State state);
   void removeLine(uint32_t address);
   void lruShuffle(uint32_t address);
   State getState(uint32_t address);
+  State getStateOfBlock(uint32_t address);
 
  private:
   uint16_t blockSize{32};
@@ -71,7 +77,7 @@ class Cache {
   uint8_t getBlockWay(uint32_t blockNum);
   uint8_t getBlockWaySus(uint32_t blockNum);
 
-  bool containsBlock(uint32_t blockNum);
+  bool containsBlockSus(uint32_t blockNum);
 
   [[nodiscard]] inline std::vector<CacheLine>& setOfBlock(uint32_t blockNum) { return store[blockNum % numSets]; }
 
