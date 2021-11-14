@@ -4,7 +4,8 @@
 #include "Bus.hpp"
 
 namespace CacheSim {
-uint32_t MOESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address) {
+uint32_t MOESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address,
+                                    uint8_t drop_pid) {
   switch (cacheOp) {
     case CacheOp::PR_WB:
       monitor.trafficBytes += blockSize;
@@ -66,8 +67,7 @@ void MOESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_
         }
       }
       if (anyCacheContains) caches[pid]->updateLine(address, CacheLine::CacheState::OWNED);
-      else
-        caches[pid]->updateLine(address, CacheLine::CacheState::MODIFIED);
+      else caches[pid]->updateLine(address, CacheLine::CacheState::MODIFIED);
       caches[pid]->lruShuffle(address);
       break;
     }
@@ -82,8 +82,7 @@ void MOESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_
         }
       }
       if (anyCacheContains) caches[pid]->insertLine(address, CacheLine::CacheState::OWNED);
-      else
-        caches[pid]->insertLine(address, CacheLine::CacheState::MODIFIED);
+      else caches[pid]->insertLine(address, CacheLine::CacheState::MODIFIED);
       break;
     }
     case CacheOp::PR_WB: {
@@ -100,8 +99,7 @@ void MOESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_
       for (auto id : blocksToUpdate) {
         if (caches[id]->getState(address) == CacheLine::CacheState::OWNED)
           caches[id]->updateLine(address, CacheLine::CacheState::MODIFIED);
-        else
-          caches[id]->updateLine(address, CacheLine::CacheState::EXCLUSIVE);
+        else caches[id]->updateLine(address, CacheLine::CacheState::EXCLUSIVE);
       }
     }
 

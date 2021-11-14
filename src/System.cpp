@@ -59,7 +59,7 @@ void System::printPostRunStats() {
   std::cout << "executionCycles,computeCycles,idleCycles,loadStoreCount" << std::endl;
   for (auto i = 0; i < 4; i++) { processors[i].printData(); }
   std::cout << "totalTime,"
-            << std::ranges::max_element(processors.begin(), processors.end(),
+            << std::ranges::max_element(processors,
                                         [](const Processor& p1, const Processor& p2) {
                                           return p1.monitor.executionCycleCount < p2.monitor.executionCycleCount;
                                         })

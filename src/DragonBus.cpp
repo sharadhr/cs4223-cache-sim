@@ -17,12 +17,14 @@ uint32_t DragonBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cac
 }
 
 void DragonBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) {
+  printDebug(caches, pid, address);
   auto triggeringCache = caches[pid];
   auto drop_pid = pid;
 
   switch (triggeringCache->blockingOperation) {
     case CacheOp::PR_RD_HIT:
       triggeringCache->lruShuffle(address);
+      break;
     case CacheOp::PR_WR_HIT:
       // If any other caches contain this address...
       if (doOtherCachesContain(caches, drop_pid, address)) {
@@ -34,7 +36,7 @@ void DragonBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8
                               [&](auto& cachePtr) { cachePtr->updateLine(address, State::SHARED); });
       } else triggeringCache->updateLine(address, State::MODIFIED);
       // else, set the block in this cache to MODIFIED
-      return;
+      break;
     case CacheOp::PR_RD_MISS:
       // If any *other* caches contain the block associated with this address...
       if (doOtherCachesContain(caches, drop_pid, address)) {
@@ -42,47 +44,43 @@ void DragonBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8
         triggeringCache->insertLine(address, State::SHARED);
 
         // And for the other caches that *do* contain the above-mentioned block, set those based on those blocks' states
-        std::ranges::for_each(otherCachesContaining(caches, drop_pid, address), [&](std::shared_ptr<Cache>& cachePtr) {
+        std::ranges::for_each(otherCachesContaining(caches, drop_pid, address), [&](auto& cachePtr) {
           switch (cachePtr->getState(address)) {
             case State::SHARED:
             case State::INVALID:
-              return;
+            case State::OWNED:
+              break;
             case State::MODIFIED:
             case State::SHARED_MODIFIED:
               // flush
               cachePtr->updateLine(address, State::SHARED_MODIFIED);
-              return;
+              break;
             case State::EXCLUSIVE:
               cachePtr->updateLine(address, State::SHARED);
           }
         });
       } else triggeringCache->insertLine(address, State::EXCLUSIVE);
-      return;
+      break;
     case CacheOp::PR_WR_MISS:
       // if any *other* caches contain the block associated with this address...
       if (doOtherCachesContain(caches, drop_pid, address)) {
         // insert the block, and set its state to SHARED_MODIFIED
         triggeringCache->insertLine(address, State::SHARED_MODIFIED);
 
-        // And for the other caches that *do* contain the above-mentioned block, set those blocks appropriately
-        std::ranges::for_each(otherCachesContaining(caches, drop_pid, address), [&](std::shared_ptr<Cache>& cachePtr) {
-          switch (cachePtr->getState(address)) {
-            case State::SHARED_MODIFIED:
-            case State::MODIFIED:
-            case State::EXCLUSIVE:
-              cachePtr->updateLine(address, State::SHARED);
-              return;
-            case State::SHARED:
-            case State::INVALID:
-              return;
-          }
-        });
+        // And for the other caches that *do* contain the above-mentioned block, change those blocks appropriately
+        for (auto& cache : caches) {
+          if (cache->containsAddress(address) && cache->pid != pid)
+            cache->updateLine(address, CacheLine::CacheState::SHARED);
+        }
+        std::ranges::for_each(otherCachesContaining(caches, drop_pid, address),
+                              [&](auto& cachePtr) { cachePtr->updateLine(address, State::SHARED); });
       } else triggeringCache->insertLine(address, State::MODIFIED);
       // if the block isn't shared, set ours to MODIFIED
-      return;
+      break;
     case CacheOp::PR_WB:
     case CacheOp::PR_NULL:
-      return;
+      break;
   }
+  printDebug(caches, pid, address);
 }
 }// namespace CacheSim

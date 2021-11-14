@@ -69,6 +69,7 @@ class Cache {
   std::vector<std::vector<CacheLine>> store;
 
   uint8_t getBlockWay(uint32_t blockNum);
+  uint8_t getBlockWaySus(uint32_t blockNum);
 
   bool containsBlock(uint32_t blockNum);
 
