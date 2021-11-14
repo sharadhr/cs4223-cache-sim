@@ -9,7 +9,6 @@
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
-  /* std::cout << "Shuffle address: " << address << std::endl; */
   assert(containsAddress(address));
   auto blockNum = address / blockSize;
   if (!containsBlock(blockNum)) return;
@@ -41,8 +40,6 @@ bool Cache::containsBlock(uint32_t blockNum) {
   auto currentSet = setOfBlock(blockNum);
 
   return std::ranges::any_of(currentSet, [&blockNum](const CacheLine& line) {
-    /* std::cout << blockNum << " " << line.blockNum << " " << (int) line.state << " " */
-    /*           << (int) (line.blockNum == blockNum && line.state != State::INVALID) << std::endl; */
     return line.blockNum == blockNum && line.state != State::INVALID;
   });
 }
@@ -59,23 +56,16 @@ bool Cache::needsEvictionFor(uint32_t incomingAddress) {
 
 void Cache::evictFor(uint32_t incomingAddress) {
   uint32_t setIndex = setIndexFromAddress(incomingAddress);
-  // TODO:  Check if Sm requires WB
-  if (store[setIndex][0].state == State::MODIFIED
-      || store[setIndex][0].state == CacheLine::CacheState::SHARED_MODIFIED) {
-    setBlocked(store[setIndex][0].blockNum, CacheOp::PR_WB);
-  }
+  setBlocked(store[setIndex][0].blockNum, CacheOp::PR_WB);
 }
 
 CacheOp Cache::getCacheOpFor(const Type type, uint32_t address) {
   switch (type) {
     case Type::LD: {
-      /* std::cout << "Address LD: " << address << std::endl; */
       auto result = containsAddress(address) ? CacheOp::PR_RD_HIT : CacheOp::PR_RD_MISS;
-      /* std::cout << "RESULT: " << (int) result << std::endl; */
       return result;
     }
     case Type::ST:
-      /* std::cout << "Address ST: " << address << std::endl; */
       return containsAddress(address) ? CacheOp::PR_WR_HIT : CacheOp::PR_WR_MISS;
     case Type::ALU:
     case Type::DONE:

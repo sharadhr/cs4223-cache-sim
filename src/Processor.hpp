@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 #include "Cache.hpp"
@@ -32,7 +33,8 @@ class Processor {
   void printData();
 
   [[nodiscard]] inline CacheOp getCacheOp() const {
-    return cache->getCacheOpFor(blockingInstruction.type, blockingInstruction.value);
+    auto result = cache->getCacheOpFor(blockingInstruction.type, blockingInstruction.value);
+    return result;
   }
 
   [[nodiscard]] inline bool isBlocked() const { return blockedFor > 0; }

@@ -58,7 +58,6 @@ void Processor::block(uint32_t blockedCycles) {
     case CacheOp::PR_RD_MISS:
     case CacheOp::PR_WR_MISS:
       if (cache->needsEvictionFor(blockingInstruction.value)) {
-        blockedFor = 100;
         cache->evictFor(blockingInstruction.value);
         return;
       }

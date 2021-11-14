@@ -19,7 +19,6 @@ class Bus {
     std::cout << address << " " << pid << " ";
     std::for_each(caches.begin(), caches.end(),
                   [address](const std::shared_ptr<Cache> cache) { std::cout << (int) cache->getState(address); });
-    std::cout << std::endl;
   }
 
   BusMonitor monitor;

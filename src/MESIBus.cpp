@@ -29,7 +29,10 @@ uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cache
 }
 
 void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) {
+  printDebug(std::move(caches), pid, address);
   switch (caches[pid]->blockingOperation) {
+    case CacheOp::PR_NULL:
+      return;
     case CacheOp::PR_RD_HIT: {
       caches[pid]->lruShuffle(address);
       break;
@@ -69,8 +72,7 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
       if (blocksToUpdate.size() > 1) break;
       for (auto id : blocksToUpdate) caches[id]->updateLine(address, CacheLine::CacheState::EXCLUSIVE);
     }
-    case CacheOp::PR_NULL:
-      break;
   }
+  printDebug(std::move(caches), pid, address);
 }
 }// namespace CacheSim
