@@ -31,7 +31,7 @@ uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cache
 
 void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) {
 
-  /* printDebug(caches, pid, address); */
+  printDebug(caches, pid, address);
 
   switch (caches[pid]->blockingOperation) {
     case CacheOp::PR_NULL:
@@ -55,7 +55,6 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
       }
       break;
     }
-    case CacheOp::PR_WR_HIT:
     case CacheOp::PR_WR_MISS: {
       for (int i = 0; i < 4; i++) {
         if (i != pid && caches[i]->containsAddress(address)) {
@@ -64,6 +63,17 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
         }
       }
       caches[pid]->insertLine(address, CacheLine::CacheState::MODIFIED);
+      break;
+    }
+    case CacheOp::PR_WR_HIT: {
+      for (int i = 0; i < 4; i++) {
+        if (i != pid && caches[i]->containsAddress(address)) {
+          // monitor.numOfInvalidationsOrUpdates++;
+          caches[i]->removeLine(address);
+        }
+      }
+      caches[pid]->updateLine(address, CacheLine::CacheState::MODIFIED);
+      caches[pid]->lruShuffle(address);
       break;
     }
     case CacheOp::PR_WB: {
@@ -77,7 +87,7 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
       for (auto id : blocksToUpdate) caches[id]->updateLine(address, CacheLine::CacheState::EXCLUSIVE);
     }
   }
-  /* printDebug(caches, pid, address); */
+  printDebug(caches, pid, address);
 }
 void MESIBus::handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) {
   // SSII -> IEII

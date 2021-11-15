@@ -10,7 +10,6 @@ void Cache::lruShuffle(uint32_t address) {
   auto blockNum = address / blockSize;
   if (!containsBlockSus(blockNum))
     throw std::domain_error("Shuffle on nonexistent address: " + std::to_string(address));
-  // assert(containsAddress(address));
   auto& currentSet = setOfBlock(blockNum);
   auto way = getBlockWaySus(blockNum);
 
@@ -95,8 +94,14 @@ void Cache::insertLine(uint32_t address, State state) {
   uint32_t blockNum = address / blockSize;
   auto setIndex = setIndexFromAddress(address);
 
+  if (store[setIndex][0].state != State::INVALID)
+    throw std::domain_error("Eviction didnt happen: " + std::to_string(address));
+
   store[setIndex].erase(store[setIndex].begin());
   store[setIndex].push_back(CacheLine(state, blockNum));
+
+  if (store[setIndex].size() != associativity)
+    throw std::domain_error("InsertLine broke set: " + std::to_string(setIndex));
 }
 
 void Cache::updateLine(uint32_t address, State state) {
@@ -111,6 +116,9 @@ void Cache::updateLineForBlock(uint32_t blockNum, State state) {
   auto way = getBlockWaySus(blockNum);
 
   store[setIndex][way].state = state;
+
+  if (store[setIndex].size() != associativity)
+    throw std::domain_error("UpdateLine broke set: " + std::to_string(setIndex));
 }
 
 void Cache::removeLine(uint32_t address) {
@@ -130,6 +138,9 @@ void Cache::removeLineForBlock(uint32_t blockNum) {
   store[setIndex].erase(store[setIndex].begin() + way);
   line.state = State::INVALID;
   store[setIndex].insert(store[setIndex].begin(), line);
+
+  if (store[setIndex].size() != associativity)
+    throw std::domain_error("RemoveLine broke set: " + std::to_string(setIndex));
 }
 
 CacheLine::CacheState Cache::getState(uint32_t address) {

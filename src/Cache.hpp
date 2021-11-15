@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 #include <memory>
 #include <queue>
 #include <vector>
@@ -45,7 +46,7 @@ class Cache {
       numBlocks(numBlocks),
       numSets(numBlocks / associativity),
       associativity(associativity) {
-    store = std::vector(numBlocks / associativity, std::vector(associativity, CacheLine()));
+    store = std::vector(numSets, std::vector(associativity, CacheLine()));
   }
 
   void setBlocked(uint32_t address, CacheOp operation);
