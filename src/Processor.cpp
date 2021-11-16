@@ -44,6 +44,7 @@ void Processor::fetchInstruction() {
   } else {
     blockingInstruction = {Type::DONE, 0};
   }
+  cache->setCacheOpFor(blockingInstruction.type, blockingInstruction.value);
 }
 
 void Processor::block(uint32_t blockedCycles) {

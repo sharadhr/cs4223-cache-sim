@@ -21,6 +21,7 @@ class System {
 
   void printPostRunStats();
 
+  bool handleEvictionIfNeeded(Processor& processor);
   bool processorsDone();
   void refresh(Processor& processor);
   inline std::array<std::shared_ptr<Cache>, 4> getCaches() {

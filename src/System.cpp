@@ -40,35 +40,40 @@ void System::refresh(Processor& processor) {
       bus->transition(getCaches(), processor.pid, processor.blockingInstruction.value);
 
     processor.fetchInstruction();
-    processor.cache->setCacheOpFor(processor.blockingInstruction.type, processor.blockingInstruction.value);
+    bool needsWriteback = handleEvictionIfNeeded(processor);
 
-    switch (processor.cache->blockingOperation) {
-      case CacheOp::PR_RD_MISS:
-      case CacheOp::PR_WR_MISS: {
-        if (processor.cache->needsEvictionFor(processor.blockingInstruction.value)) {
-          bool needsWriteBack = processor.cache->needsWriteBack(processor.blockingInstruction.value);
-          bus->handleEviction(getCaches(), processor.pid,
-                              processor.cache->evictedBlock(processor.blockingInstruction.value));
-
-          if (needsWriteBack) {
-            processor.monitor.evictionCount++;
-            processor.block(100);
-            return;
-          }
-        }
-        break;
-      }
-      default:
-        break;
+    if (!needsWriteback) {
+      auto blockingCycles = bus->getBlockedCycles(getCaches(), processor.cache->blockingOperation,
+                                                  processor.blockingInstruction.value, processor.pid);
+      processor.block(blockingCycles);
     }
-
-    auto blockingCycles = bus->getBlockedCycles(getCaches(), processor.cache->blockingOperation,
-                                                processor.blockingInstruction.value, processor.pid);
-    processor.block(blockingCycles);
   }
 
   // current instruction
   processor.refresh();
+}
+
+bool System::handleEvictionIfNeeded(Processor& processor) {
+  switch (processor.cache->blockingOperation) {
+    case CacheOp::PR_RD_MISS:
+    case CacheOp::PR_WR_MISS: {
+      if (processor.cache->needsEvictionFor(processor.blockingInstruction.value)) {
+        bool needsWriteBack = processor.cache->needsWriteBack(processor.blockingInstruction.value);
+        bus->handleEviction(getCaches(), processor.pid,
+                            processor.cache->evictedBlock(processor.blockingInstruction.value));
+
+        if (needsWriteBack) {
+          processor.monitor.evictionCount++;
+          processor.block(100);
+          return true;
+        }
+      }
+      break;
+    }
+    default:
+      break;
+  }
+  return false;
 }
 
 void System::run() {

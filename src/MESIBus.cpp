@@ -31,7 +31,7 @@ uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cache
 
 void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) {
 
-  printDebug(caches, pid, address);
+  /* printDebug(caches, pid, address); */
 
   switch (caches[pid]->blockingOperation) {
     case CacheOp::PR_NULL:
@@ -87,7 +87,7 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
       for (auto id : blocksToUpdate) caches[id]->updateLine(address, CacheLine::CacheState::EXCLUSIVE);
     }
   }
-  printDebug(caches, pid, address);
+  /* printDebug(caches, pid, address); */
 }
 void MESIBus::handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) {
   // SSII -> IEII
