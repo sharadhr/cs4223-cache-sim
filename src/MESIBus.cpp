@@ -55,7 +55,6 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
       }
       break;
     }
-    case CacheOp::PR_WR_HIT:
     case CacheOp::PR_WR_MISS: {
       for (int i = 0; i < 4; i++) {
         if (i != pid && caches[i]->containsAddress(address)) {
@@ -66,7 +65,19 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
       caches[pid]->insertLine(address, CacheLine::CacheState::MODIFIED);
       break;
     }
+    case CacheOp::PR_WR_HIT: {
+      for (int i = 0; i < 4; i++) {
+        if (i != pid && caches[i]->containsAddress(address)) {
+          // monitor.numOfInvalidationsOrUpdates++;
+          caches[i]->removeLine(address);
+        }
+      }
+      caches[pid]->updateLine(address, CacheLine::CacheState::MODIFIED);
+      caches[pid]->lruShuffle(address);
+      break;
+    }
     case CacheOp::PR_WB: {
+      throw std::domain_error("No WB handled by transition" + std::to_string(address));
       // SSII -> IEII
       std::vector<uint8_t> blocksToUpdate;
       for (int i = 0; i < 4; i++)
@@ -77,5 +88,16 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
     }
   }
   printDebug(caches, pid, address);
+}
+void MESIBus::handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) {
+  // SSII -> IEII
+  caches[pid]->removeLineForBlock(blockNum);
+
+  std::vector<uint8_t> blocksToUpdate;
+  for (int i = 0; i < 4; i++)
+    if (i != pid && caches[i]->containsBlock(blockNum)) blocksToUpdate.push_back(i);
+
+  if (blocksToUpdate.size() > 1) return;
+  for (auto id : blocksToUpdate) caches[id]->updateLineForBlock(blockNum, CacheLine::CacheState::EXCLUSIVE);
 }
 }// namespace CacheSim

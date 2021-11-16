@@ -17,6 +17,7 @@ class Bus {
   virtual uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp, uint32_t address,
                                     uint8_t drop_pid) = 0;
   virtual void transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) = 0;
+  virtual void handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) = 0;
 
   void printDebug(std::array<std::shared_ptr<Cache>, 4>& caches, uint32_t pid, uint32_t address) {
 #ifndef NDEBUG
@@ -59,6 +60,7 @@ class MESIBus : public Bus {
   uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp, uint32_t,
                             uint8_t drop_pid) override;
   void transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) override;
+  void handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) override;
 };
 
 class DragonBus : public Bus {
@@ -70,6 +72,7 @@ class DragonBus : public Bus {
   uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address,
                             uint8_t drop_pid) override;
   void transition(std::array<std::shared_ptr<Cache>, 4>&& cachePtr, uint8_t pid, uint32_t address) override;
+  void handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) override;
 };
 
 class MOESIBus : public Bus {
@@ -81,7 +84,6 @@ class MOESIBus : public Bus {
   uint32_t getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp, uint32_t address,
                             uint8_t drop_pid) override;
   void transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) override;
-
- private:
+  void handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) override;
 };
 }// namespace CacheSim

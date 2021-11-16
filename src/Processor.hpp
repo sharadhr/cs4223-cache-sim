@@ -32,11 +32,6 @@ class Processor {
 
   void printData();
 
-  [[nodiscard]] inline CacheOp getCacheOp() const {
-    auto result = cache->getCacheOpFor(blockingInstruction.type, blockingInstruction.value);
-    return result;
-  }
-
   [[nodiscard]] inline bool isBlocked() const { return blockedFor > 0; }
 
  private:

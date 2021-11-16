@@ -47,23 +47,21 @@ void Processor::fetchInstruction() {
 }
 
 void Processor::block(uint32_t blockedCycles) {
-  auto cacheOp = getCacheOp();
+  auto cacheOp = cache->blockingOperation;
+
+  blockedFor = blockedCycles;
 
   switch (cacheOp) {
     case CacheOp::PR_RD_HIT:
-    case CacheOp::PR_WR_HIT:
-      ++blockedFor;
-      cache->setBlocked(blockingInstruction.value, cacheOp);
+    case CacheOp::PR_WR_HIT: {
+      monitor.hitCount++;
       break;
+    }
     case CacheOp::PR_RD_MISS:
-    case CacheOp::PR_WR_MISS:
-      if (cache->needsEvictionFor(blockingInstruction.value)) {
-        cache->evictFor(blockingInstruction.value);
-        return;
-      }
-      blockedFor = blockedCycles;
-      cache->setBlocked(blockingInstruction.value, cacheOp);
+    case CacheOp::PR_WR_MISS: {
+      monitor.missCount++;
       break;
+    }
     case CacheOp::PR_WB:
     case CacheOp::PR_NULL:
       if (blockingInstruction.type == Type::ALU) blockedFor = blockingInstruction.value;
@@ -72,7 +70,8 @@ void Processor::block(uint32_t blockedCycles) {
 }
 
 void Processor::printData() {
-  std::cout << monitor.executionCycleCount << "," << monitor.cycleCount << "," << monitor.idleCycleCount << ","
-            << monitor.loadStoreCount << std::endl;
+  std::cout << monitor.executionCycleCount << "\t" << monitor.cycleCount << "\t" << monitor.idleCycleCount << "\t"
+            << monitor.loadStoreCount << "\t" << monitor.missCount << "\t" << monitor.hitCount << "\t"
+            << monitor.evictionCount << std::endl;
 }
 }// namespace CacheSim
