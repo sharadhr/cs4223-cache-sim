@@ -20,18 +20,14 @@ uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cache
     case CacheOp::PR_RD_MISS:
     case CacheOp::PR_WR_MISS: {
       // monitor.trafficBytes += blockSize;
-      bool anyCacheContains = false;
-      for (int i = 0; i < 4; i++) {
-        if (caches[i]->containsAddress(address)) anyCacheContains = true;
-      }
-      return anyCacheContains ? 2 * blockSize / 4 : 100;
+      return 100;
     }
   }
 }
 
 void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) {
 
-  /* printDebug(caches, pid, address); */
+  printDebug(caches, pid, address);
 
   switch (caches[pid]->blockingOperation) {
     case CacheOp::PR_NULL:
@@ -78,16 +74,9 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
     }
     case CacheOp::PR_WB: {
       throw std::domain_error("No WB handled by transition" + std::to_string(address));
-      // SSII -> IEII
-      std::vector<uint8_t> blocksToUpdate;
-      for (int i = 0; i < 4; i++)
-        if (i != pid && caches[i]->containsAddress(address)) blocksToUpdate.push_back(i);
-
-      if (blocksToUpdate.size() > 1) break;
-      for (auto id : blocksToUpdate) caches[id]->updateLine(address, CacheLine::CacheState::EXCLUSIVE);
     }
   }
-  /* printDebug(caches, pid, address); */
+  printDebug(caches, pid, address);
 }
 void MESIBus::handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) {
   // SSII -> IEII

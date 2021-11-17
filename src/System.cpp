@@ -25,6 +25,7 @@ System::System(const std::filesystem::path& benchmark, std::string_view protocol
   }
 
   if (protocol == "MESI") bus = std::make_shared<MESIBus>(blockSize);
+  else if (protocol == "MOESI") bus = std::make_shared<MOESIBus>(blockSize);
   else bus = std::make_shared<DragonBus>(blockSize);
 }
 

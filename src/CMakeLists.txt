@@ -4,6 +4,7 @@ add_executable(
 		CoreMonitor.cpp
 		DragonBus.cpp
 		MESIBus.cpp
+    MOESIBus.cpp
 		Processor.cpp
 		Runner.cpp
 		Runner.cpp

@@ -44,6 +44,7 @@ void Processor::fetchInstruction() {
   } else {
     blockingInstruction = {Type::DONE, 0};
   }
+
   cache->setCacheOpFor(blockingInstruction.type, blockingInstruction.value);
 }
 
@@ -71,8 +72,8 @@ void Processor::block(uint32_t blockedCycles) {
 }
 
 void Processor::printData() {
-  std::cout << monitor.executionCycleCount << "\t" << monitor.cycleCount << "\t" << monitor.idleCycleCount << "\t"
-            << monitor.loadStoreCount << "\t" << monitor.missCount << "\t" << monitor.hitCount << "\t"
+  std::cout << monitor.executionCycleCount << "," << monitor.cycleCount << "," << monitor.idleCycleCount << ","
+            << monitor.loadStoreCount << "," << monitor.missCount << "," << monitor.hitCount << ","
             << monitor.evictionCount << std::endl;
 }
 }// namespace CacheSim

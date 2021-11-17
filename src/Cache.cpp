@@ -61,7 +61,8 @@ bool Cache::needsEvictionFor(uint32_t incomingAddress) {
 
 bool Cache::needsWriteBack(uint32_t incomingAddress) {
   uint32_t setIndex = setIndexFromAddress(incomingAddress);
-  return store[setIndex][0].state == State::MODIFIED;
+  return store[setIndex][0].state == State::MODIFIED || store[setIndex][0].state == State::SHARED_MODIFIED
+      || store[setIndex][0].state == State::OWNED;
 }
 
 uint32_t Cache::evictedBlock(uint32_t incomingAddress) {

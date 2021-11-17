@@ -23,13 +23,12 @@ Runner::Arguments Runner::checkArguments(int argc, const char* argv[]) {
   if (argc < 6) {
     std::cout << "Fewer than 5 arguments were provided. Using defaults." << std::endl;
     return {};
-  } else if (argc > 6)
-    throw std::domain_error("More than 5 arguments were provided. Exiting.");
+  } else if (argc > 6) throw std::domain_error("More than 5 arguments were provided. Exiting.");
 
   std::vector<std::string> argVec(argv, argv + argc);
   Arguments arguments(argv);
-  if (arguments.protocol != "MESI" && arguments.protocol != "Dragon")
-    throw std::domain_error(R"(Protocol must be either "MESI" or "Dragon", but ")" + argVec[1]
+  if (arguments.protocol != "MESI" && arguments.protocol != "MOESI" && arguments.protocol != "Dragon")
+    throw std::domain_error(R"(Protocol must be either "MESI", "MOESI" or "Dragon", but ")" + argVec[1]
                             + R"(" was encountered instead.)");
 
   if (arguments.blockSize % 4 != 0)
@@ -58,15 +57,13 @@ void Runner::printConfig() const {
   else if (args.cacheSize > (1 << 20))
     ss << " (" << std::setprecision(4) << static_cast<double>(args.cacheSize) / static_cast<double>(1 << 20) << " MiB)"
        << std::endl;
-  else
-    ss << std::endl;
+  else ss << std::endl;
 
   ss << "Block size: " << args.blockSize << " B" << std::endl;
 
   ss << "Associativity: ";
   if (args.associativity == 1) ss << "direct-mapped" << std::endl;
-  else if (args.associativity == args.numBlocks)
-    ss << "fully associative" << std::endl;
+  else if (args.associativity == args.numBlocks) ss << "fully associative" << std::endl;
   else {
     ss << std::to_string(args.associativity) << "-way set-associative" << std::endl
        << "Cache blocks: " << args.numBlocks << " (" << (args.numBlocks / args.associativity) << " per set)"
