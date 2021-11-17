@@ -24,9 +24,9 @@ System::System(const std::filesystem::path& benchmark, std::string_view protocol
     processor = {pid++, std::ifstream(coreBenchmarkFile), associativity, numBlocks, blockSize};
   }
 
-  if (protocol == "MESI") bus = std::make_shared<MESIBus>(blockSize);
-  else if (protocol == "MOESI") bus = std::make_shared<MOESIBus>(blockSize);
-  else bus = std::make_shared<DragonBus>(blockSize);
+  if (protocol == "MESI") bus = std::make_shared<MESIBus>(blockSize, getCaches());
+  else if (protocol == "MOESI") bus = std::make_shared<MOESIBus>(blockSize, getCaches());
+  else bus = std::make_shared<DragonBus>(blockSize, getCaches());
 }
 
 bool System::processorsDone() {
@@ -38,14 +38,14 @@ void System::refresh(Processor& processor) {
   // next instruction
   if (!processor.isBlocked()) {
     if (processor.cache->blockingOperation != CacheOp::PR_NULL)
-      bus->transition(getCaches(), processor.pid, processor.blockingInstruction.value);
+      bus->transition(processor.pid, processor.blockingInstruction.value);
 
     processor.fetchInstruction();
     bool needsWriteback = handleEvictionIfNeeded(processor);
 
     if (!needsWriteback) {
-      auto blockingCycles = bus->getBlockedCycles(getCaches(), processor.cache->blockingOperation,
-                                                  processor.blockingInstruction.value, processor.pid);
+      auto blockingCycles =
+          bus->getBlockedCycles(processor.cache->blockingOperation, processor.blockingInstruction.value, processor.pid);
       processor.block(blockingCycles);
     }
   }
@@ -60,8 +60,7 @@ bool System::handleEvictionIfNeeded(Processor& processor) {
     case CacheOp::PR_WR_MISS: {
       if (processor.cache->needsEvictionFor(processor.blockingInstruction.value)) {
         bool needsWriteBack = processor.cache->needsWriteBack(processor.blockingInstruction.value);
-        bus->handleEviction(getCaches(), processor.pid,
-                            processor.cache->evictedBlock(processor.blockingInstruction.value));
+        bus->handleEviction(processor.pid, processor.cache->evictedBlockFor(processor.blockingInstruction.value));
 
         if (needsWriteBack) {
           processor.monitor.evictionCount++;
@@ -78,7 +77,7 @@ bool System::handleEvictionIfNeeded(Processor& processor) {
 }
 
 void System::run() {
-  while (!processorsDone()) std::ranges::for_each(processors, [&](Processor& processor) { refresh(processor); });
+  while (!processorsDone()) std::ranges::for_each(processors, [&](auto& processor) { refresh(processor); });
 
   printPostRunStats();
 }

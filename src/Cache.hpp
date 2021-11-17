@@ -43,18 +43,15 @@ class Cache {
   Cache(uint8_t pid, uint8_t associativity, uint32_t numBlocks, uint16_t blockSize) :
       pid(pid),
       blockSize(blockSize),
-      numBlocks(numBlocks),
       numSets(numBlocks / associativity),
       associativity(associativity) {
     store = std::vector(numSets, std::vector(associativity, CacheLine()));
   }
 
-  void setBlocked(uint32_t address, CacheOp operation);
   bool needsEvictionFor(uint32_t incomingAddress);
-  void evictFor(uint32_t incomingAddress);
   bool needsWriteBack(uint32_t incomingAddress);
-  uint32_t evictedBlock(uint32_t incomingAddress);
-  void setCacheOpFor(const Type type, uint32_t address);
+  uint32_t evictedBlockFor(uint32_t incomingAddress);
+  void setCacheOpFor(const Type& type, uint32_t address);
   void removeLineForBlock(uint32_t blockNum);
 
   bool containsAddress(uint32_t address);
@@ -69,7 +66,6 @@ class Cache {
 
  private:
   uint16_t blockSize{32};
-  uint32_t numBlocks{4096 / 32};
   uint32_t numSets{1};
   uint8_t associativity{2};
   uint32_t blockingCacheBlock{};

@@ -1,21 +1,18 @@
 
 #include <algorithm>
+#include <string>
 
 #include "Bus.hpp"
 
 namespace CacheSim {
-uint32_t MOESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address,
-                                    uint8_t drop_pid) {
+uint32_t MOESIBus::getBlockedCycles(CacheOp cacheOp, uint32_t address, [[maybe_unused]] uint8_t drop_pid) {
   switch (cacheOp) {
     case CacheOp::PR_WB:
     case CacheOp::PR_NULL:
       return 0;
-    case CacheOp::PR_RD_HIT: {
+    case CacheOp::PR_RD_HIT:
+    case CacheOp::PR_WR_HIT:
       return 1;
-    }
-    case CacheOp::PR_WR_HIT: {
-      return 1;
-    }
     case CacheOp::PR_RD_MISS:
     case CacheOp::PR_WR_MISS: {
       bool anyCacheContainsDirtyLine = false;
@@ -30,73 +27,50 @@ uint32_t MOESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cach
   }
 }
 
-void MOESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) {
-  printDebug(caches, pid, address);
+void MOESIBus::transition(uint8_t pid, uint32_t address) {
+  printDebug(pid, address);
   switch (caches[pid]->blockingOperation) {
     case CacheOp::PR_RD_HIT: {
       caches[pid]->lruShuffle(address);
       break;
     }
     case CacheOp::PR_RD_MISS: {
-      bool anyCacheContains = false;
-      for (int i = 0; i < 4; i++) {
-        if (i != pid && caches[i]->containsAddress(address)) {
-          anyCacheContains = true;
-          if (caches[i]->getState(address) == CacheLine::CacheState::MODIFIED) {
-            caches[i]->updateLine(address, CacheLine::CacheState::OWNED);
-          } else if (caches[i]->getState(address) == CacheLine::CacheState::EXCLUSIVE) {
-            caches[i]->updateLine(address, CacheLine::CacheState::SHARED);
-          }
+      if (doOtherCachesContain(pid, address)) {
+        for (auto& cache : otherCachesContaining(pid, address)) {
+          if (cache->getState(address) == State::MODIFIED) cache->updateLine(address, State::OWNED);
+          else if (cache->getState(address) == State::EXCLUSIVE) cache->updateLine(address, State::SHARED);
         }
-      }
-      if (anyCacheContains) {
-        caches[pid]->insertLine(address, CacheLine::CacheState::SHARED);
-      } else {
-        caches[pid]->insertLine(address, CacheLine::CacheState::EXCLUSIVE);
-      }
+        caches[pid]->insertLine(address, State::SHARED);
+      } else caches[pid]->insertLine(address, State::EXCLUSIVE);
       break;
     }
     case CacheOp::PR_WR_HIT: {
-      for (int i = 0; i < 4; i++) {
-        if (i != pid && caches[i]->containsAddress(address)) { caches[i]->removeLine(address); }
-      }
-      caches[pid]->updateLine(address, CacheLine::CacheState::MODIFIED);
+      for (auto& cache : otherCachesContaining(pid, address)) cache->removeLine(address);
+      caches[pid]->updateLine(address, State::MODIFIED);
       caches[pid]->lruShuffle(address);
       break;
     }
     case CacheOp::PR_WR_MISS: {
-      for (int i = 0; i < 4; i++) {
-        if (i != pid && caches[i]->containsAddress(address)) { caches[i]->removeLine(address); }
-      }
-      caches[pid]->insertLine(address, CacheLine::CacheState::MODIFIED);
+      for (auto& cache : otherCachesContaining(pid, address)) cache->removeLine(address);
+      caches[pid]->insertLine(address, State::MODIFIED);
       break;
     }
-    case CacheOp::PR_WB: {
+    case CacheOp::PR_WB:
       throw std::domain_error("No WB handled by transition" + std::to_string(address));
-    }
     case CacheOp::PR_NULL:
       break;
   }
-  printDebug(caches, pid, address);
+  printDebug(pid, address);
 }
-void MOESIBus::handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) {
+void MOESIBus::handleEviction(uint8_t pid, uint32_t address) {
   // SOII -> IMII
   // SSII -> IEII
 
-  caches[pid]->removeLineForBlock(blockNum);
+  caches[pid]->removeLineForBlock(address);
 
-  std::vector<uint8_t> blocksToUpdate;
-
-  for (int i = 0; i < 4; i++) {
-    if (i != pid && caches[i]->containsBlock(blockNum)) blocksToUpdate.push_back(i);
-  }
-
-  if (blocksToUpdate.size() > 1) return;
-
-  for (auto id : blocksToUpdate) {
-    if (caches[id]->getStateOfBlock(blockNum) == CacheLine::CacheState::OWNED)
-      caches[id]->updateLineForBlock(blockNum, CacheLine::CacheState::MODIFIED);
-    else caches[id]->updateLineForBlock(blockNum, CacheLine::CacheState::EXCLUSIVE);
+  for (auto& cache : otherCachesContaining(pid, address)) {
+    if (cache->getStateOfBlock(address) == State::OWNED) cache->updateLineForBlock(address, State::MODIFIED);
+    else cache->updateLineForBlock(address, State::EXCLUSIVE);
   }
 }
 }// namespace CacheSim

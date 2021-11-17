@@ -23,7 +23,7 @@ uint8_t Cache::getBlockWay(uint32_t blockNum) {
 
   auto way = std::distance(currentSet.begin(),
                            std::find_if(currentSet.begin(), currentSet.end(), [&blockNum](const CacheLine& line) {
-                             return line.state != CacheLine::CacheState::INVALID && line.blockNum == blockNum;
+                             return line.state != State::INVALID && line.blockNum == blockNum;
                            }));
 
   return static_cast<uint8_t>(0 <= way && way < associativity ? way : UINT8_MAX);
@@ -65,12 +65,12 @@ bool Cache::needsWriteBack(uint32_t incomingAddress) {
       || store[setIndex][0].state == State::OWNED;
 }
 
-uint32_t Cache::evictedBlock(uint32_t incomingAddress) {
+uint32_t Cache::evictedBlockFor(uint32_t incomingAddress) {
   uint32_t setIndex = setIndexFromAddress(incomingAddress);
   return store[setIndex][0].blockNum;
 }
 
-void Cache::setCacheOpFor(const Type type, uint32_t address) {
+void Cache::setCacheOpFor(const Type& type, uint32_t address) {
   blockingCacheBlock = address / blockSize;
   switch (type) {
     case Type::LD: {
@@ -92,7 +92,7 @@ void Cache::setCacheOpFor(const Type type, uint32_t address) {
 }
 
 void Cache::insertLine(uint32_t address, State state) {
-  uint32_t blockNum = address / blockSize;
+  auto blockNum = address / blockSize;
   auto setIndex = setIndexFromAddress(address);
 
   if (store[setIndex][0].state != State::INVALID)
@@ -106,7 +106,7 @@ void Cache::insertLine(uint32_t address, State state) {
 }
 
 void Cache::updateLine(uint32_t address, State state) {
-  uint32_t blockNum = address / blockSize;
+  auto blockNum = address / blockSize;
   updateLineForBlock(blockNum, state);
 }
 
@@ -144,12 +144,12 @@ void Cache::removeLineForBlock(uint32_t blockNum) {
     throw std::domain_error("RemoveLine broke set: " + std::to_string(setIndex));
 }
 
-CacheLine::CacheState Cache::getState(uint32_t address) {
-  uint32_t blockNum = address / blockSize;
+State Cache::getState(uint32_t address) {
+  auto blockNum = address / blockSize;
   return getStateOfBlock(blockNum);
 }
 
-CacheLine::CacheState Cache::getStateOfBlock(uint32_t blockNum) {
+State Cache::getStateOfBlock(uint32_t blockNum) {
   auto setIndex = blockNum % numSets;
   auto way = getBlockWay(blockNum);
   return way == UINT8_MAX ? State::INVALID : store[setIndex][way].state;

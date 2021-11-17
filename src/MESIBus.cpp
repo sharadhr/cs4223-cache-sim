@@ -1,11 +1,12 @@
 
 #include <algorithm>
+#include <string>
 
 #include "Bus.hpp"
 
 namespace CacheSim {
-uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address,
-                                   uint8_t drop_pid) {
+uint32_t MESIBus::getBlockedCycles(CacheOp cacheOp, [[maybe_unused]] uint32_t address,
+                                   [[maybe_unused]] uint8_t drop_pid) {
   switch (cacheOp) {
     case CacheOp::PR_WB:
       // monitor.trafficBytes += blockSize;
@@ -22,12 +23,14 @@ uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cache
       // monitor.trafficBytes += blockSize;
       return 100;
     }
+    default:
+      return 0;
   }
 }
 
-void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) {
+void MESIBus::transition(uint8_t pid, uint32_t address) {
 
-  printDebug(caches, pid, address);
+  printDebug(pid, address);
 
   switch (caches[pid]->blockingOperation) {
     case CacheOp::PR_NULL:
@@ -37,17 +40,18 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
       break;
     }
     case CacheOp::PR_RD_MISS: {
+
       bool anyCacheContains = false;
       for (int i = 0; i < 4; i++) {
         if (i != pid && caches[i]->containsAddress(address)) {
           anyCacheContains = true;
-          caches[i]->updateLine(address, CacheLine::CacheState::SHARED);
+          caches[i]->updateLine(address, State::SHARED);
         }
       }
       if (anyCacheContains) {
-        caches[pid]->insertLine(address, CacheLine::CacheState::SHARED);
+        caches[pid]->insertLine(address, State::SHARED);
       } else {
-        caches[pid]->insertLine(address, CacheLine::CacheState::EXCLUSIVE);
+        caches[pid]->insertLine(address, State::EXCLUSIVE);
       }
       break;
     }
@@ -58,7 +62,7 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
           caches[i]->removeLine(address);
         }
       }
-      caches[pid]->insertLine(address, CacheLine::CacheState::MODIFIED);
+      caches[pid]->insertLine(address, State::MODIFIED);
       break;
     }
     case CacheOp::PR_WR_HIT: {
@@ -68,7 +72,7 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
           caches[i]->removeLine(address);
         }
       }
-      caches[pid]->updateLine(address, CacheLine::CacheState::MODIFIED);
+      caches[pid]->updateLine(address, State::MODIFIED);
       caches[pid]->lruShuffle(address);
       break;
     }
@@ -76,9 +80,10 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
       throw std::domain_error("No WB handled by transition" + std::to_string(address));
     }
   }
-  printDebug(caches, pid, address);
+  printDebug(pid, address);
 }
-void MESIBus::handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) {
+void MESIBus::handleEviction(uint8_t pid, uint32_t address) {
+  auto blockNum = address / blockSize;
   // SSII -> IEII
   caches[pid]->removeLineForBlock(blockNum);
 
@@ -87,6 +92,6 @@ void MESIBus::handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uin
     if (i != pid && caches[i]->containsBlock(blockNum)) blocksToUpdate.push_back(i);
 
   if (blocksToUpdate.size() > 1) return;
-  for (auto id : blocksToUpdate) caches[id]->updateLineForBlock(blockNum, CacheLine::CacheState::EXCLUSIVE);
+  for (auto id : blocksToUpdate) caches[id]->updateLineForBlock(blockNum, State::EXCLUSIVE);
 }
 }// namespace CacheSim
