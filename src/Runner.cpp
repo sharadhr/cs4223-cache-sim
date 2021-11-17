@@ -49,7 +49,9 @@ Runner::Arguments Runner::checkArguments(int argc, const char* argv[]) {
 
 void Runner::printConfig() const {
   std::stringstream ss;
-  ss << "====================================" << std::endl << "Cache size: " << args.cacheSize << " B";
+  ss << "====================================" << std::endl
+     << "Cache protocol:\t\t" << args.protocol << std::endl
+     << "Cache size:\t\t" << args.cacheSize << " B";
 
   if (args.cacheSize > (1 << 10) && args.cacheSize < (1 << 20))
     ss << " (" << std::setprecision(4) << static_cast<double>(args.cacheSize) / static_cast<double>(1 << 10) << " KiB)"
@@ -59,20 +61,20 @@ void Runner::printConfig() const {
        << std::endl;
   else ss << std::endl;
 
-  ss << "Block size: " << args.blockSize << " B" << std::endl;
+  ss << "Block size:\t\t" << args.blockSize << " B" << std::endl;
 
-  ss << "Associativity: ";
+  ss << "Associativity:\t\t";
   if (args.associativity == 1) ss << "direct-mapped" << std::endl;
   else if (args.associativity == args.numBlocks) ss << "fully associative" << std::endl;
   else {
     ss << std::to_string(args.associativity) << "-way set-associative" << std::endl
-       << "Cache blocks: " << args.numBlocks << " (" << (args.numBlocks / args.associativity) << " per set)"
+       << "Cache blocks:\t\t" << args.numBlocks << " (" << (args.numBlocks / args.associativity) << " per set)"
        << std::endl
        << "====================================";
     std::cout << ss.view() << std::endl;
     return;
   }
-  ss << "Cache blocks: " << args.numBlocks << std::endl << "====================================";
+  ss << "Cache blocks:\t\t" << args.numBlocks << std::endl << "====================================";
 
   std::cout << ss.view() << std::endl;
 }

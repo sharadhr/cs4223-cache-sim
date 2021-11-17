@@ -99,22 +99,16 @@ void MOESIBus::handleEviction(uint8_t pid, uint32_t address) {
   // Add index of caches containing the block to be evicted
   std::vector<uint8_t> blocksToUpdate;
 
-  for (int i = 0; i < 4; i++) {
-    if (i != pid && caches[i]->containsBlock(blockNum)) blocksToUpdate.push_back(i);
-  }
+  auto cachesToUpdate = otherCachesContaining(pid, address);
 
-  // If number of caches to be updated is greater than 1, then no need to change state. This implies caches are in SHARED state
-  // or OWNED and SHARED state.
-  if (blocksToUpdate.size() > 1) return;
+  // If only 1 cache with block is left, then it needs to be put in EXCLUSIVE or OWNED state
+  if (cachesToUpdate.size() == 1) {
+    if (cachesToUpdate[0]->getStateOfBlock(blockNum) == CacheLine::CacheState::OWNED)
+      // If last containing cache has a block in OWNED state, transition it to MODIFIED
+      cachesToUpdate[0]->updateLineForBlock(blockNum, CacheLine::CacheState::MODIFIED);
 
-  // If only 1 cache with block is left, then it needs to be put in EXCLUSIVE or OWNED state state
-  for (auto id : blocksToUpdate) {
-    if (caches[id]->getStateOfBlock(blockNum) == CacheLine::CacheState::OWNED)
-      // If last containing cache has block is in OWNED state, transition it to MODIFIED
-      caches[id]->updateLineForBlock(blockNum, CacheLine::CacheState::MODIFIED);
-
-    // Else if last containing cache has block is in SHARED state, transition it to EXCLUSIVE
-    else caches[id]->updateLineForBlock(blockNum, CacheLine::CacheState::EXCLUSIVE);
+    // Else if last containing cache has a block in SHARED state, transition it to EXCLUSIVE
+    else cachesToUpdate[0]->updateLineForBlock(blockNum, CacheLine::CacheState::EXCLUSIVE);
   }
 }
 }// namespace CacheSim

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
-#include <iostream>
+#include <cstdio>
 #include <ranges>
 #include <string>
 
@@ -21,10 +21,9 @@ class Bus {
 
   void printDebug([[maybe_unused]] uint32_t pid, [[maybe_unused]] uint32_t address) {
 #ifndef NDEBUG
-    std::cout << pid << "\t" << address << "\t";
-    std::ranges::for_each(caches, [address](const std::shared_ptr<Cache>& cache) {
-      std::cout << std::to_string(static_cast<uint32_t>(cache->getState(address)));
-    });
+    fprintf(stdout, "%-2d %#010x ", pid, address);
+    std::ranges::for_each(caches,
+                          [address](const std::shared_ptr<Cache>& cache) { std::cout << cache->getState(address); });
     std::cout << std::endl;
 #endif
   }

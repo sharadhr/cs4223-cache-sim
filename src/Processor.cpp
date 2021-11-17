@@ -71,7 +71,7 @@ void Processor::block(uint32_t blockedCycles) {
   }
 }
 
-void Processor::printData() {
+void Processor::printData() const {
   std::cout << monitor.executionCycleCount << "," << monitor.cycleCount << "," << monitor.idleCycleCount << ","
             << monitor.loadStoreCount << "," << monitor.missCount << "," << monitor.hitCount << std::endl;
 }

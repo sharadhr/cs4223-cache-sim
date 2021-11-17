@@ -1,7 +1,6 @@
 #include "Cache.hpp"
 
 #include <algorithm>
-#include <cassert>
 #include <stdexcept>
 #include <string>
 
@@ -67,11 +66,10 @@ bool Cache::needsWriteBack(uint32_t incomingAddress) {
 
 uint32_t Cache::evictedBlockFor(uint32_t incomingAddress) {
   uint32_t setIndex = setIndexFromAddress(incomingAddress);
-  return store[setIndex][0].blockNum;
+  return store[setIndex][0].address;
 }
 
 void Cache::setCacheOpFor(const Type& type, uint32_t address) {
-  blockingCacheBlock = address / blockSize;
   switch (type) {
     case Type::LD: {
       blockingOperation = containsAddress(address) ? CacheOp::PR_RD_HIT : CacheOp::PR_RD_MISS;
@@ -99,7 +97,7 @@ void Cache::insertLine(uint32_t address, State state) {
     throw std::domain_error("Eviction didnt happen: " + std::to_string(address));
 
   store[setIndex].erase(store[setIndex].begin());
-  store[setIndex].push_back(CacheLine(state, blockNum));
+  store[setIndex].push_back(CacheLine(state, address, blockNum));
 
   if (store[setIndex].size() != associativity)
     throw std::domain_error("InsertLine broke set: " + std::to_string(setIndex));
@@ -154,5 +152,4 @@ State Cache::getStateOfBlock(uint32_t blockNum) {
   auto way = getBlockWay(blockNum);
   return way == UINT8_MAX ? State::INVALID : store[setIndex][way].state;
 }
-
 }// namespace CacheSim

@@ -29,9 +29,8 @@ class Processor {
   void refresh();
   void fetchInstruction();
   void block(uint32_t blockedCycles);
-  void updateDataAcessCount();
 
-  void printData();
+  void printData() const;
 
   [[nodiscard]] inline bool isBlocked() const { return blockedFor > 0; }
 

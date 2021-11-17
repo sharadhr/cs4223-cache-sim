@@ -41,7 +41,7 @@ void MESIBus::transition(uint8_t pid, uint32_t address) {
         // If other caches contain the block with address, the current cache should insert a SHARED line
         caches[pid]->insertLine(address, State::SHARED);
       } else caches[pid]->insertLine(address, State::EXCLUSIVE);
-
+      // If other caches do not contain the block with address, the current cache should insert an EXCLUSIVE line
       break;
     }
     case CacheOp::PR_WR_MISS: {
@@ -77,7 +77,7 @@ void MESIBus::transition(uint8_t pid, uint32_t address) {
     }
     case CacheOp::PR_WB: {
       // WB are handled by handleEviction which removes the line.
-      // If this state is called, then line wasn't removed and we have an error.
+      // If this state is called, then line wasn't removed, and we have an error.
       throw std::domain_error("No WB handled by transition" + std::to_string(address));
     }
   }
@@ -89,15 +89,9 @@ void MESIBus::handleEviction(uint8_t pid, uint32_t address) {
   // Remove the line to be evicted.
   caches[pid]->removeLineForBlock(blockNum);
 
-  // Add index of caches containing the block to be evicted
-  std::vector<uint8_t> blocksToUpdate;
-  for (int i = 0; i < 4; i++)
-    if (i != pid && caches[i]->containsBlock(blockNum)) blocksToUpdate.push_back(i);
-
-  // If number of caches to be updated is greater than 1, then no need to change state. This implies caches are in SHARED state.
-  if (blocksToUpdate.size() > 1) return;
+  auto cachesToUpdate = otherCachesContaining(pid, address);
 
   // If only 1 cache with block is left, then it needs to be put in EXCLUSIVE state
-  for (auto id : blocksToUpdate) caches[id]->updateLineForBlock(blockNum, CacheLine::CacheState::EXCLUSIVE);
+  if (cachesToUpdate.size() == 1) cachesToUpdate[0]->updateLineForBlock(blockNum, State::EXCLUSIVE);
 }
 }// namespace CacheSim

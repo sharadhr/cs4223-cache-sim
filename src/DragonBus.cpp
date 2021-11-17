@@ -99,21 +99,15 @@ void DragonBus::transition(uint8_t pid, uint32_t address) {
 
 void DragonBus::handleEviction(uint8_t pid, uint32_t address) {
   auto blockNum = address / blockSize;
-  // SSII -> IEII
-  // SSII -> IEII
   caches[pid]->removeLineForBlock(blockNum);
 
-  std::vector<uint8_t> blocksToUpdate;
-  for (int i = 0; i < 4; i++)
-    if (i != pid && caches[i]->containsBlock(blockNum)) blocksToUpdate.push_back(i);
+  auto cachesToUpdate = otherCachesContaining(pid, address);
 
-  if (blocksToUpdate.size() > 1) return;
-  for (auto id : blocksToUpdate) {
-    if (caches[id]->getStateOfBlock(blockNum) == State::SHARED_MODIFIED) {
-      caches[id]->updateLineForBlock(blockNum, CacheLine::CacheState::MODIFIED);
-    } else if (caches[id]->getStateOfBlock(blockNum) == State::SHARED) {
-      caches[id]->updateLineForBlock(blockNum, CacheLine::CacheState::EXCLUSIVE);
-    }
+  if (cachesToUpdate.size() == 1) {
+    if (cachesToUpdate[0]->getStateOfBlock(blockNum) == State::SHARED_MODIFIED)
+      cachesToUpdate[0]->updateLineForBlock(blockNum, CacheLine::CacheState::MODIFIED);
+    else if (cachesToUpdate[0]->getStateOfBlock(blockNum) == State::SHARED)
+      cachesToUpdate[0]->updateLineForBlock(blockNum, CacheLine::CacheState::EXCLUSIVE);
   }
 }
 }// namespace CacheSim

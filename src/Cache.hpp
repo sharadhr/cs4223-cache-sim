@@ -9,7 +9,14 @@
 #include "Instruction.hpp"
 
 namespace CacheSim {
-enum class CacheOp { PR_RD_HIT, PR_WR_HIT, PR_RD_MISS, PR_WR_MISS, PR_WB, PR_NULL };
+enum class CacheOp {
+  PR_RD_HIT,
+  PR_WR_HIT,
+  PR_RD_MISS,
+  PR_WR_MISS,
+  PR_WB,
+  PR_NULL,
+};
 
 class CacheLine {
  public:
@@ -25,9 +32,13 @@ class CacheLine {
  private:
   CacheState state{CacheState::INVALID};
   uint32_t blockNum{};
+  uint32_t address{};
 
   CacheLine() : state(CacheState::INVALID) {}
-  CacheLine(CacheState state, uint32_t blockNum) : state(state), blockNum(blockNum) {}
+  CacheLine(CacheState state, uint32_t address, uint32_t blockNum) :
+      state(state),
+      address(address),
+      blockNum(blockNum) {}
 
   friend class Cache;
 };
@@ -68,16 +79,33 @@ class Cache {
   uint16_t blockSize{32};
   uint32_t numSets{1};
   uint8_t associativity{2};
-  uint32_t blockingCacheBlock{};
   std::vector<std::vector<CacheLine>> store;
 
   uint8_t getBlockWay(uint32_t blockNum);
   uint8_t getBlockWaySus(uint32_t blockNum);
-
   bool containsBlockSus(uint32_t blockNum);
 
   [[nodiscard]] inline std::vector<CacheLine>& setOfBlock(uint32_t blockNum) { return store[blockNum % numSets]; }
-
   [[nodiscard]] inline uint32_t setIndexFromAddress(uint32_t address) const { return (address / blockSize) % numSets; }
 };
+
+inline std::ostream& operator<<(std::ostream& os, CacheLine::CacheState state) {
+  switch (state) {
+    case CacheLine::CacheState::INVALID:
+      return os << "I";
+    case CacheLine::CacheState::MODIFIED:
+      return os << "M";
+    case CacheLine::CacheState::SHARED:
+      return os << "S";
+    case CacheLine::CacheState::EXCLUSIVE:
+      return os << "E";
+    case CacheLine::CacheState::SHARED_MODIFIED:
+      return os << "Sm";
+    case CacheLine::CacheState::OWNED:
+      return os << "O";
+    default:
+      return os;
+  }
+}
+
 }// namespace CacheSim
