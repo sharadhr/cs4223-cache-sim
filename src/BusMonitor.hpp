@@ -14,7 +14,11 @@ class BusMonitor {
   uint64_t busRdXTraffic;
   uint64_t busUpdTraffic;
 
+  uint64_t trafficData;
+
   uint64_t privateAccessCount;
   uint64_t sharedAccessCount;
+
+  uint64_t numOfInvalidationsOrUpdates;
 };
 }// namespace CacheSim

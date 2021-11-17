@@ -64,7 +64,6 @@ bool System::handleEvictionIfNeeded(Processor& processor) {
                             processor.cache->evictedBlock(processor.blockingInstruction.value));
 
         if (needsWriteBack) {
-          processor.monitor.evictionCount++;
           processor.block(100);
           return true;
         }
@@ -84,7 +83,7 @@ void System::run() {
 }
 
 void System::printPostRunStats() {
-  std::cout << "executionCycles\tcomputeCycles\tidleCycles\tloadStoreCount\tmissCount\thitCount\n";
+  std::cout << "executionCycles,computeCycles,idleCycles,loadStoreCount,missCount,hitCount" << std::endl;
   for (auto i = 0; i < 4; i++) { processors[i].printData(); }
   std::cout << "totalTime,"
             << std::ranges::max_element(processors,
@@ -93,5 +92,9 @@ void System::printPostRunStats() {
                                         })
                    ->monitor.executionCycleCount
             << std::endl;
+
+  std::cout << "privateDataAccessCount,sharedDataAccessCount,numberOfInvalidationsOrUpdates,trafficData" << std::endl;
+  std::cout << bus->monitor.privateAccessCount << "," << bus->monitor.sharedAccessCount << ","
+            << bus->monitor.numOfInvalidationsOrUpdates << "," << bus->monitor.trafficData << std::endl;
 }
 }// namespace CacheSim

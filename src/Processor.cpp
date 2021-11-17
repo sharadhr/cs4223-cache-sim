@@ -73,7 +73,6 @@ void Processor::block(uint32_t blockedCycles) {
 
 void Processor::printData() {
   std::cout << monitor.executionCycleCount << "," << monitor.cycleCount << "," << monitor.idleCycleCount << ","
-            << monitor.loadStoreCount << "," << monitor.missCount << "," << monitor.hitCount << ","
-            << monitor.evictionCount << std::endl;
+            << monitor.loadStoreCount << "," << monitor.missCount << "," << monitor.hitCount << std::endl;
 }
 }// namespace CacheSim

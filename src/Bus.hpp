@@ -19,6 +19,32 @@ class Bus {
   virtual void transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) = 0;
   virtual void handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) = 0;
 
+  void updateDataAcessCount(std::array<std::shared_ptr<Cache>, 4>& caches, uint32_t address) {
+    bool isShared = false;
+    for (auto cache : caches) {
+      if (cache->containsAddress(address)) {
+        auto state = cache->getState(address);
+        switch (state) {
+          case State::OWNED:
+          case State::SHARED:
+          case State::SHARED_MODIFIED: {
+            isShared = true;
+            break;
+          }
+          case State::MODIFIED:
+          case State::EXCLUSIVE:
+          case State::INVALID:
+            break;
+        }
+      }
+    }
+    if (isShared) {
+      monitor.sharedAccessCount++;
+    } else {
+      monitor.privateAccessCount++;
+    }
+  }
+
   void printDebug(std::array<std::shared_ptr<Cache>, 4>& caches, uint32_t pid, uint32_t address) {
 #ifndef NDEBUG
     std::cout << pid << "\t" << address << "\t";

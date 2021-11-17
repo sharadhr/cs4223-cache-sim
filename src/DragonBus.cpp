@@ -3,13 +3,25 @@
 namespace CacheSim {
 uint32_t DragonBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address,
                                      uint8_t drop_pid) {
+  if (cacheOp != CacheOp::PR_NULL) updateDataAcessCount(caches, address);
+
   switch (cacheOp) {
-    case CacheOp::PR_RD_HIT:
-    case CacheOp::PR_WR_HIT:
+    case CacheOp::PR_RD_HIT: {
       return 1;
+    }
+    case CacheOp::PR_WR_HIT:
+      monitor.trafficData += 4;
+      return 2;
     case CacheOp::PR_RD_MISS:
-    case CacheOp::PR_WR_MISS:
-      return doOtherCachesContain(caches, drop_pid, address) ? 2 : 100;
+    case CacheOp::PR_WR_MISS: {
+      bool otherCachesContainData = doOtherCachesContain(caches, drop_pid, address);
+      if (otherCachesContainData) {
+        monitor.trafficData += blockSize;
+        return 2 * blockSize / 4;
+      } else {
+        return 100;
+      }
+    }
     case CacheOp::PR_WB:
     case CacheOp::PR_NULL:
       return 0;
@@ -17,7 +29,7 @@ uint32_t DragonBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cac
 }
 
 void DragonBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t address) {
-  /* printDebug(caches, pid, address); */
+  printDebug(caches, pid, address);
   auto triggeringCache = caches[pid];
   auto drop_pid = pid;
 
@@ -32,8 +44,10 @@ void DragonBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8
         triggeringCache->updateLine(address, State::SHARED_MODIFIED);
 
         // And for the other caches that *do* contain the above-mentioned block, set them to SHARED, aka SHARED_CLEAN
-        std::ranges::for_each(otherCachesContaining(caches, drop_pid, address),
-                              [&](auto& cachePtr) { cachePtr->updateLine(address, State::SHARED); });
+        std::ranges::for_each(otherCachesContaining(caches, drop_pid, address), [&](auto& cachePtr) {
+          monitor.numOfInvalidationsOrUpdates++;
+          cachePtr->updateLine(address, State::SHARED);
+        });
       } else triggeringCache->updateLine(address, State::MODIFIED);
       // else, set the block in this cache to MODIFIED
       break;
@@ -69,8 +83,10 @@ void DragonBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8
 
         // And for the other caches that *do* contain the above-mentioned block, change those blocks appropriately
         for (auto& cache : caches) {
-          if (cache->containsAddress(address) && cache->pid != pid)
+          if (cache->containsAddress(address) && cache->pid != pid) {
+            monitor.numOfInvalidationsOrUpdates++;
             cache->updateLine(address, CacheLine::CacheState::SHARED);
+          }
         }
         std::ranges::for_each(otherCachesContaining(caches, drop_pid, address),
                               [&](auto& cachePtr) { cachePtr->updateLine(address, State::SHARED); });
@@ -81,7 +97,7 @@ void DragonBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8
     case CacheOp::PR_NULL:
       break;
   }
-  /* printDebug(caches, pid, address); */
+  printDebug(caches, pid, address);
 }
 
 void DragonBus::handleEviction(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t pid, uint32_t blockNum) {

@@ -6,6 +6,7 @@
 namespace CacheSim {
 uint32_t MOESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address,
                                     uint8_t drop_pid) {
+  if (cacheOp != CacheOp::PR_NULL) updateDataAcessCount(caches, address);
   switch (cacheOp) {
     case CacheOp::PR_WB:
     case CacheOp::PR_NULL:
@@ -22,6 +23,7 @@ uint32_t MOESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& cach
       for (int i = 0; i < 4; i++) {
         if (caches[i]->containsAddress(address)
             && (caches[i]->getState(address) == State::OWNED || caches[i]->getState(address) == State::MODIFIED)) {
+          monitor.trafficData += blockSize;
           anyCacheContainsDirtyLine = true;
         }
       }
@@ -58,7 +60,10 @@ void MOESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_
     }
     case CacheOp::PR_WR_HIT: {
       for (int i = 0; i < 4; i++) {
-        if (i != pid && caches[i]->containsAddress(address)) { caches[i]->removeLine(address); }
+        if (i != pid && caches[i]->containsAddress(address)) {
+          monitor.numOfInvalidationsOrUpdates++;
+          caches[i]->removeLine(address);
+        }
       }
       caches[pid]->updateLine(address, CacheLine::CacheState::MODIFIED);
       caches[pid]->lruShuffle(address);
@@ -66,7 +71,10 @@ void MOESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_
     }
     case CacheOp::PR_WR_MISS: {
       for (int i = 0; i < 4; i++) {
-        if (i != pid && caches[i]->containsAddress(address)) { caches[i]->removeLine(address); }
+        if (i != pid && caches[i]->containsAddress(address)) {
+          monitor.numOfInvalidationsOrUpdates++;
+          caches[i]->removeLine(address);
+        }
       }
       caches[pid]->insertLine(address, CacheLine::CacheState::MODIFIED);
       break;

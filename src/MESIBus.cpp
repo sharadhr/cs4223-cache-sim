@@ -6,20 +6,19 @@
 namespace CacheSim {
 uint32_t MESIBus::getBlockedCycles(std::array<std::shared_ptr<Cache>, 4>&& caches, CacheOp cacheOp, uint32_t address,
                                    uint8_t drop_pid) {
+  if (cacheOp != CacheOp::PR_NULL) updateDataAcessCount(caches, address);
+
   switch (cacheOp) {
     case CacheOp::PR_WB:
-      // monitor.trafficBytes += blockSize;
     case CacheOp::PR_NULL:
       return 0;
     case CacheOp::PR_RD_HIT:
       return 1;
     case CacheOp::PR_WR_HIT: {
-      // monitor.trafficBytes += blockSize;
       return 1;
     }
     case CacheOp::PR_RD_MISS:
     case CacheOp::PR_WR_MISS: {
-      // monitor.trafficBytes += blockSize;
       return 100;
     }
   }
@@ -54,7 +53,7 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
     case CacheOp::PR_WR_MISS: {
       for (int i = 0; i < 4; i++) {
         if (i != pid && caches[i]->containsAddress(address)) {
-          // monitor.numOfInvalidationsOrUpdates++;
+          monitor.numOfInvalidationsOrUpdates++;
           caches[i]->removeLine(address);
         }
       }
@@ -64,7 +63,7 @@ void MESIBus::transition(std::array<std::shared_ptr<Cache>, 4>&& caches, uint8_t
     case CacheOp::PR_WR_HIT: {
       for (int i = 0; i < 4; i++) {
         if (i != pid && caches[i]->containsAddress(address)) {
-          // monitor.numOfInvalidationsOrUpdates++;
+          monitor.numOfInvalidationsOrUpdates++;
           caches[i]->removeLine(address);
         }
       }

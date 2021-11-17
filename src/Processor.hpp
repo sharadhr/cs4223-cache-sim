@@ -29,6 +29,7 @@ class Processor {
   void refresh();
   void fetchInstruction();
   void block(uint32_t blockedCycles);
+  void updateDataAcessCount();
 
   void printData();
 
