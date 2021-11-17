@@ -1,10 +1,9 @@
 add_executable(
 		coherence
 		Cache.cpp
-		CoreMonitor.cpp
 		DragonBus.cpp
 		MESIBus.cpp
-    MOESIBus.cpp
+		MOESIBus.cpp
 		Processor.cpp
 		Runner.cpp
 		Runner.cpp

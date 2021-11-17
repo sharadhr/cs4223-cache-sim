@@ -24,6 +24,8 @@ uint32_t MOESIBus::getBlockedCycles(CacheOp cacheOp, uint32_t address, [[maybe_u
       }
       return anyCacheContainsDirtyLine ? 2 * blockSize / 4 : 100;
     }
+    default:
+      return 0;
   }
 }
 

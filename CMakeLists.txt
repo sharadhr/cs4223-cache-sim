@@ -9,5 +9,5 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/W4>"
 		"$<$<CXX_COMPILER_ID:Clang,GNU>:-Wall;-Wextra;-Wpedantic>")
-#add_compile_definitions("$<$<CXX_COMPILER_ID:MSVC>:__cpp_lib_ranges>")
+add_compile_definitions("$<$<CXX_COMPILER_ID:MSVC>:__cpp_lib_ranges>")
 add_subdirectory(src)

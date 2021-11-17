@@ -1,6 +1,6 @@
 #pragma once
 
-// #include <algorithm>
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <iostream>
@@ -19,7 +19,7 @@ class Bus {
   virtual void transition(uint8_t pid, uint32_t address) = 0;
   virtual void handleEviction(uint8_t pid, uint32_t address) = 0;
 
-  void printDebug(uint32_t pid, uint32_t address) {
+  void printDebug([[maybe_unused]] uint32_t pid, [[maybe_unused]] uint32_t address) {
 #ifndef NDEBUG
     std::cout << pid << "\t" << address << "\t";
     std::ranges::for_each(caches, [address](const std::shared_ptr<Cache>& cache) {
@@ -36,9 +36,11 @@ class Bus {
   };
 
   auto inline otherCachesContaining(uint8_t drop_pid, uint32_t address) {
-    return caches | std::views::filter(caches, [&](auto& cachePtr) {
-             return cachePtr->containsAddress(address) && cachePtr->pid != drop_pid;
-           });
+    std::vector<std::shared_ptr<Cache>> returnable{};
+    std::ranges::copy_if(caches, std::back_inserter(returnable), [&](auto& cachePtr) {
+      return cachePtr->containsAddress(address) && cachePtr->pid != drop_pid;
+    });
+    return returnable;
   };
 
   Bus() = default;

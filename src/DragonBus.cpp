@@ -11,12 +11,13 @@ uint32_t DragonBus::getBlockedCycles(CacheOp cacheOp, uint32_t address, uint8_t 
       return doOtherCachesContain(drop_pid, address) ? 2 : 100;
     case CacheOp::PR_WB:
     case CacheOp::PR_NULL:
+    default:
       return 0;
   }
 }
 
 void DragonBus::transition(uint8_t pid, uint32_t address) {
-  /* printDebug(caches, pid, address); */
+  printDebug(pid, address);
   auto triggeringCache = caches[pid];
   auto drop_pid = pid;
 
@@ -79,7 +80,7 @@ void DragonBus::transition(uint8_t pid, uint32_t address) {
     case CacheOp::PR_NULL:
       break;
   }
-  /* printDebug(caches, pid, address); */
+  printDebug(pid, address);
 }
 
 void DragonBus::handleEviction(uint8_t pid, uint32_t address) {
@@ -87,17 +88,10 @@ void DragonBus::handleEviction(uint8_t pid, uint32_t address) {
   // SSII -> IEII
   caches[pid]->removeLineForBlock(blockNum);
 
-  std::vector<uint8_t> blocksToUpdate;
-  for (int i = 0; i < 4; i++)
-    if (i != pid && caches[i]->containsBlock(address)) blocksToUpdate.push_back(i);
-
-  if (blocksToUpdate.size() > 1) return;
-  for (auto id : blocksToUpdate) {
-    if (caches[id]->getStateOfBlock(blockNum) == State::SHARED_MODIFIED) {
-      caches[id]->updateLineForBlock(blockNum, State::MODIFIED);
-    } else if (caches[id]->getStateOfBlock(blockNum) == State::SHARED) {
-      caches[id]->updateLineForBlock(blockNum, State::EXCLUSIVE);
-    }
+  for (auto& cache : otherCachesContaining(pid, address)) {
+    if (cache->getStateOfBlock(blockNum) == State::SHARED_MODIFIED)
+      cache->updateLineForBlock(blockNum, State::MODIFIED);
+    else if (cache->getStateOfBlock(blockNum) == State::SHARED) cache->updateLineForBlock(blockNum, State::EXCLUSIVE);
   }
 }
 }// namespace CacheSim
