@@ -29,6 +29,32 @@ class Bus {
 #endif
   }
 
+  void updateDataAccessCount(uint32_t address) {
+    bool isShared = false;
+    for (auto& cache : caches) {
+      if (cache->containsAddress(address)) {
+        auto state = cache->getState(address);
+        switch (state) {
+          case State::OWNED:
+          case State::SHARED:
+          case State::SHARED_MODIFIED: {
+            isShared = true;
+            break;
+          }
+          case State::MODIFIED:
+          case State::EXCLUSIVE:
+          case State::INVALID:
+            break;
+        }
+      }
+    }
+    if (isShared) {
+      monitor.sharedAccessCount++;
+    } else {
+      monitor.privateAccessCount++;
+    }
+  }
+
   bool inline doOtherCachesContain(uint8_t drop_pid, uint32_t address) {
     return std::ranges::any_of(caches, [&](std::shared_ptr<Cache>& cachePtr) {
       return cachePtr->containsAddress(address) && cachePtr->pid != drop_pid;
