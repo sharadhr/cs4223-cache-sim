@@ -76,7 +76,10 @@ std::string Runner::printConfig() const {
 
   auto KiBMiBString = KiBMiB.str();
 
+  auto benchmark = std::regex_replace(args.benchmark.string(), std::regex("data/"), "");
+
   config << std::setfill('=') << std::setw(40) << '\n' << std::setfill(' ');
+  config << std::left << std::setw(15) << "Benchmark:" << std::right << std::setw(25) << benchmark + "\n";
   config << std::left << std::setw(15) << "Cache protocol:" << std::right << std::setw(25)
          << std::string(args.protocol) + "\n";
   config << std::left << std::setw(15) << "Cache size:" << std::right << std::setw(25)

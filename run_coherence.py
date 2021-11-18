@@ -42,11 +42,11 @@ results_output_dir = ". /output/results"
 cache_types = ["MESI", "Dragon", "MOESI"]
 # Possible benchmarks
 benchmarks = ["bodytrack", "blackscholes", "fluidanimate"]
-# Cache size; minimum: 16 B (4 words); maximum: 512 MB
-cache_size = [2 ** i for i in range(4, 30)]
+# Cache size; minimum: 16 B (4 words); maximum: 1 MiB
+cache_size = [2 ** i for i in range(4, 21)]
 # Associativity: direct-mapped to maximum possible
-associativity = [2 ** i for i in range(0, 30)]
-# Cache line/block size: minimum: 4 words (16 B); maximum: 1024 words (4096 B = 1 KiB)
+associativity = [2 ** i for i in range(0, 21)]
+# Cache line/block size: minimum: 4 words (16 B); maximum: 512 words (2048 B = 2 KiB)
 line_size = [2 ** i for i in range(4, 12)]
 
 # coherence CSV headers for corresponding resources
