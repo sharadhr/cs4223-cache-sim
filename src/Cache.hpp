@@ -33,12 +33,14 @@ class CacheLine {
   CacheState state{CacheState::INVALID};
   uint32_t blockNum{UINT32_MAX};
   uint32_t address{};
+  bool isEmpty{true};
 
   CacheLine() : state(CacheState::INVALID) {}
   CacheLine(CacheState state, uint32_t address, uint32_t blockNum) :
       state(state),
       blockNum(blockNum),
-      address(address) {}
+      address(address),
+      isEmpty(false) {}
 
   friend class Cache;
 };
