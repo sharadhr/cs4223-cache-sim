@@ -4,21 +4,22 @@
 #include <cstdio>
 #include <stdexcept>
 #include <string>
-#include <unordered_set>
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
   auto blockNum = address / blockSize;
-  throwErrorIfSameBlockNum(blockNum);
+
+#ifndef NDEBUG
   if (!containsBlockSus(blockNum))
     throw std::domain_error("Shuffle on nonexistent address: " + std::to_string(address));
+#endif
+
   auto& currentSet = setOfBlock(blockNum);
   auto way = getBlockWaySus(blockNum);
 
   auto line = currentSet[way];
   currentSet.erase(currentSet.begin() + way);
   currentSet.push_back(line);
-  throwErrorIfSameBlockNum(blockNum);
 }
 
 uint32_t Cache::getBlockWay(uint32_t blockNum) {
@@ -93,38 +94,25 @@ void Cache::setCacheOpFor(const Type& type, uint32_t address) {
   }
 }
 
-void Cache::throwErrorIfSameBlockNum(uint32_t blockNum) {
-  int setIndex = blockNum % numSets;
-
-  std::unordered_set<long> visited;
-  for (auto line : store[setIndex]) {
-    if (line.isEmpty) { continue; }
-    if (visited.find(line.blockNum) != visited.end()) {
-      throw std::domain_error("Duplicate found " + std::to_string(line.blockNum));
-    }
-    visited.insert(line.blockNum);
-  }
-}
-
 void Cache::insertLine(uint32_t address, State state) {
   auto blockNum = address / blockSize;
-
-  throwErrorIfSameBlockNum(blockNum);
-
   auto setIndex = setIndexFromAddress(address);
 
+#ifndef NDEBUG
   if (store[setIndex][0].state != State::INVALID) {
     char buffer[11];
     std::snprintf(buffer, sizeof(buffer), "%#010x", address);
     throw std::domain_error("Eviction didn't happen: " + std::string(buffer));
   }
+#endif
 
   store[setIndex].erase(store[setIndex].begin());
   store[setIndex].push_back(CacheLine(state, address, blockNum));
 
+#ifndef NDEBUG
   if (store[setIndex].size() != associativity)
-    throw std::domain_error("InsertLine broke set: " + std::to_string(setIndex));
-  throwErrorIfSameBlockNum(blockNum);
+    throw std::domain_error("insertLine broke set: " + std::to_string(setIndex));
+#endif
 }
 
 void Cache::updateLine(uint32_t address, State state) {
@@ -133,7 +121,6 @@ void Cache::updateLine(uint32_t address, State state) {
 }
 
 void Cache::updateLineForBlock(uint32_t blockNum, State state) {
-  throwErrorIfSameBlockNum(blockNum);
   if (!containsBlockSus(blockNum))
     throw std::domain_error("Update on nonexistent blockNum: " + std::to_string(blockNum));
   auto setIndex = blockNum % numSets;
@@ -141,9 +128,10 @@ void Cache::updateLineForBlock(uint32_t blockNum, State state) {
 
   store[setIndex][way].state = state;
 
+#ifndef NDEBUG
   if (store[setIndex].size() != associativity)
     throw std::domain_error("UpdateLine broke set: " + std::to_string(setIndex));
-  throwErrorIfSameBlockNum(blockNum);
+#endif
 }
 
 void Cache::removeLine(uint32_t address) {
@@ -152,9 +140,10 @@ void Cache::removeLine(uint32_t address) {
 }
 
 void Cache::removeLineForBlock(uint32_t blockNum) {
-  throwErrorIfSameBlockNum(blockNum);
+#ifndef NDEBUG
   if (!containsBlockSus(blockNum))
     throw std::domain_error("Update on nonexistent blockNum: " + std::to_string(blockNum));
+#endif
 
   auto setIndex = blockNum % numSets;
   auto way = getBlockWaySus(blockNum);
@@ -165,9 +154,10 @@ void Cache::removeLineForBlock(uint32_t blockNum) {
   line.state = State::INVALID;
   store[setIndex].insert(store[setIndex].begin(), line);
 
+#ifndef NDEBUG
   if (store[setIndex].size() != associativity)
     throw std::domain_error("RemoveLine broke set: " + std::to_string(setIndex));
-  throwErrorIfSameBlockNum(blockNum);
+#endif
 }
 
 State Cache::getState(uint32_t address) {
