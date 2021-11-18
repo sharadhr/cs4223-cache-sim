@@ -4,21 +4,14 @@
 namespace CacheSim {
 class BusMonitor {
  public:
-  // message counts
-  uint64_t busRdCount;
-  uint64_t busRdXCount;
-  uint64_t busUpdCount;
-  uint64_t totalTransactionCount;
+  uint64_t dataTraffic{};
 
-  uint64_t busRdTraffic;
-  uint64_t busRdXTraffic;
-  uint64_t busUpdTraffic;
+  std::array<uint64_t, 4> privateAccessCount{};
+  std::array<uint64_t, 4> sharedAccessCount{};
+  std::array<uint64_t, 4> totalAccessCount{};
 
-  uint64_t trafficData;
-
-  uint64_t privateAccessCount;
-  uint64_t sharedAccessCount;
-
-  uint64_t numOfInvalidationsOrUpdates;
+  uint64_t invalidationsCount{};
+  uint64_t updatesCount{};
+  uint64_t writesbackCount{};
 };
 }// namespace CacheSim

@@ -16,13 +16,11 @@ void Processor::refresh() {
       ++monitor.idleCycleCount;
       break;
     case Type::ALU:
-      ++monitor.cycleCount;
+      ++monitor.computeCycleCount;
       break;
     case Type::DONE:
       return;
   }
-
-  if (blockingInstruction.type != Type::DONE) monitor.executionCycleCount++;
 
   if (blockedFor > 0) --blockedFor;
 }
@@ -35,14 +33,16 @@ void Processor::fetchInstruction() {
     blockingInstruction = {static_cast<uint8_t>(type), value};
     switch (blockingInstruction.type) {
       case Instruction::InstructionType::LD:
+        ++monitor.loadCount;
       case Instruction::InstructionType::ST:
-        monitor.loadStoreCount++;
+        ++monitor.storeCount;
       case Instruction::InstructionType::ALU:
       case Instruction::InstructionType::DONE:
         break;
     }
   } else {
     blockingInstruction = {Type::DONE, 0};
+    monitor.cycleCount = cycleCount;
   }
 
   cache->setCacheOpFor(blockingInstruction.type, blockingInstruction.value);
@@ -56,12 +56,12 @@ void Processor::block(uint32_t blockedCycles) {
   switch (cacheOp) {
     case CacheOp::PR_RD_HIT:
     case CacheOp::PR_WR_HIT: {
-      monitor.hitCount++;
+      ++monitor.hitCount;
       break;
     }
     case CacheOp::PR_RD_MISS:
     case CacheOp::PR_WR_MISS: {
-      monitor.missCount++;
+      ++monitor.missCount;
       break;
     }
     case CacheOp::PR_WB:
@@ -69,10 +69,5 @@ void Processor::block(uint32_t blockedCycles) {
       if (blockingInstruction.type == Type::ALU) blockedFor = blockingInstruction.value;
       break;
   }
-}
-
-void Processor::printData() const {
-  std::cout << monitor.executionCycleCount << "," << monitor.cycleCount << "," << monitor.idleCycleCount << ","
-            << monitor.loadStoreCount << "," << monitor.missCount << "," << monitor.hitCount << std::endl;
 }
 }// namespace CacheSim

@@ -27,8 +27,9 @@ class Runner {
 
   static Arguments checkArguments(int argc, const char* argv[]);
   void printConfig() const;
-  void start();
+  auto start();
   void printStats();
+  void writeToFile();
 
   explicit Runner(Arguments arguments);
   [[maybe_unused]] explicit Runner(const char* argv[]);

@@ -21,37 +21,20 @@ class Bus {
 
   void printDebug([[maybe_unused]] uint32_t pid, [[maybe_unused]] uint32_t address) {
 #ifndef NDEBUG
-    fprintf(stdout, "%-2d %#010x ", pid, address);
+    fprintf(stdout, "%d %#010x ", pid, address);
     std::ranges::for_each(caches,
                           [address](const std::shared_ptr<Cache>& cache) { std::cout << cache->getState(address); });
     std::cout << std::endl;
 #endif
   }
 
-  void updateDataAccessCount(uint32_t address) {
-    bool isShared = false;
-    for (auto& cache : caches) {
-      if (cache->containsAddress(address)) {
-        auto state = cache->getState(address);
-        switch (state) {
-          case State::OWNED:
-          case State::SHARED:
-          case State::SHARED_MODIFIED: {
-            isShared = true;
-            break;
-          }
-          case State::MODIFIED:
-          case State::EXCLUSIVE:
-          case State::INVALID:
-            break;
-        }
-      }
-    }
-    if (isShared) {
-      monitor.sharedAccessCount++;
-    } else {
-      monitor.privateAccessCount++;
-    }
+  void updateDataAccessCount(uint8_t pid, uint32_t address) {
+    if (std::ranges::any_of(caches, [&](std::shared_ptr<Cache>& cachePtr) {
+          auto state = cachePtr->getState(address);
+          return state == State::OWNED || state == State::SHARED || state == State::SHARED_MODIFIED;
+        }))
+      ++monitor.sharedAccessCount[pid];
+    else ++monitor.privateAccessCount[pid];
   }
 
   bool inline doOtherCachesContain(uint8_t drop_pid, uint32_t address) {

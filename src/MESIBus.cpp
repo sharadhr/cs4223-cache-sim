@@ -8,7 +8,7 @@ namespace CacheSim {
 uint32_t MESIBus::getBlockedCycles(CacheOp cacheOp, [[maybe_unused]] uint32_t address,
                                    [[maybe_unused]] uint8_t drop_pid) {
 
-  if (cacheOp != CacheOp::PR_NULL) updateDataAccessCount(address);
+  if (cacheOp != CacheOp::PR_NULL) updateDataAccessCount(drop_pid, address);
 
   switch (cacheOp) {
     case CacheOp::PR_WB:
@@ -47,7 +47,7 @@ void MESIBus::transition(uint8_t pid, uint32_t address) {
     case CacheOp::PR_WR_MISS: {
       for (auto& cache : otherCachesContaining(pid, address)) {
         // Update number of invalidations since these caches will be invalidated.
-        monitor.numOfInvalidationsOrUpdates++;
+        ++monitor.invalidationsCount;
 
         // Remove the line from the other cache that contain the address
         // On PR_WR, the writing cache has modification and read access to the block
@@ -61,7 +61,7 @@ void MESIBus::transition(uint8_t pid, uint32_t address) {
     case CacheOp::PR_WR_HIT: {
       for (auto& cache : otherCachesContaining(pid, address)) {
         // Update number of invalidations since these caches will be invalidated.
-        monitor.numOfInvalidationsOrUpdates++;
+        ++monitor.invalidationsCount;
 
         // Remove the line from other caches that contain the address
         // On PR_WR, the writing cache has modification and read access to the block
@@ -85,6 +85,7 @@ void MESIBus::transition(uint8_t pid, uint32_t address) {
 }
 void MESIBus::handleEviction(uint8_t pid, uint32_t address) {
   auto blockNum = address / blockSize;
+  ++monitor.writesbackCount;
 
   // Remove the line to be evicted.
   caches[pid]->removeLineForBlock(blockNum);

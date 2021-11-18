@@ -6,7 +6,7 @@
 
 namespace CacheSim {
 uint32_t MOESIBus::getBlockedCycles(CacheOp cacheOp, uint32_t address, [[maybe_unused]] uint8_t drop_pid) {
-  if (cacheOp != CacheOp::PR_NULL) updateDataAccessCount(address);
+  if (cacheOp != CacheOp::PR_NULL) updateDataAccessCount(0, address);
   switch (cacheOp) {
     case CacheOp::PR_WB:
     case CacheOp::PR_NULL:
@@ -20,7 +20,7 @@ uint32_t MOESIBus::getBlockedCycles(CacheOp cacheOp, uint32_t address, [[maybe_u
       for (int i = 0; i < 4; i++) {
         if (caches[i]->containsAddress(address)
             && (caches[i]->getState(address) == State::OWNED || caches[i]->getState(address) == State::MODIFIED)) {
-          monitor.trafficData += blockSize;
+          monitor.dataTraffic += blockSize;
           anyCacheContainsDirtyLine = true;
         }
       }
@@ -56,7 +56,7 @@ void MOESIBus::transition(uint8_t pid, uint32_t address) {
     case CacheOp::PR_WR_HIT: {
       for (auto& cache : otherCachesContaining(pid, address)) {
         // Update number of invalidations since these caches will be invalidated.
-        monitor.numOfInvalidationsOrUpdates++;
+        ++monitor.invalidationsCount;
         // Remove the line from the other cache that contain the address
         // On PR_WR, the writing cache has modification and read access to the block
         cache->removeLine(address);
@@ -71,7 +71,7 @@ void MOESIBus::transition(uint8_t pid, uint32_t address) {
     case CacheOp::PR_WR_MISS: {
       for (auto& cache : otherCachesContaining(pid, address)) {
         // Update number of invalidations since these caches will be invalidated.
-        monitor.numOfInvalidationsOrUpdates++;
+        ++monitor.invalidationsCount;
 
         // Remove the line from the other cache that contain the address
         // On PR_WR, the writing cache has modification and read access to the block
@@ -95,9 +95,7 @@ void MOESIBus::handleEviction(uint8_t pid, uint32_t address) {
   auto blockNum = address / blockSize;
   // Remove the line to be evicted.
   caches[pid]->removeLineForBlock(blockNum);
-
-  // Add index of caches containing the block to be evicted
-  std::vector<uint8_t> blocksToUpdate;
+  ++monitor.writesbackCount;
 
   auto cachesToUpdate = otherCachesContaining(pid, address);
 

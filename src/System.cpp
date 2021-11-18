@@ -24,9 +24,9 @@ System::System(const std::filesystem::path& benchmark, std::string_view protocol
     processor = {pid++, std::ifstream(coreBenchmarkFile), associativity, numBlocks, blockSize};
   }
 
-  if (protocol == "MESI") bus = std::make_shared<MESIBus>(blockSize, getCaches());
-  else if (protocol == "MOESI") bus = std::make_shared<MOESIBus>(blockSize, getCaches());
-  else bus = std::make_shared<DragonBus>(blockSize, getCaches());
+  if (protocol == "MESI") bus = std::make_unique<MESIBus>(blockSize, getCaches());
+  else if (protocol == "MOESI") bus = std::make_unique<MOESIBus>(blockSize, getCaches());
+  else bus = std::make_unique<DragonBus>(blockSize, getCaches());
 }
 
 bool System::processorsDone() {
@@ -77,23 +77,5 @@ bool System::handleEvictionIfNeeded(Processor& processor) {
 
 void System::run() {
   while (!processorsDone()) std::ranges::for_each(processors, [&](auto& processor) { refresh(processor); });
-
-  printPostRunStats();
-}
-
-void System::printPostRunStats() {
-  std::cout << "executionCycles,computeCycles,idleCycles,loadStoreCount,missCount,hitCount" << std::endl;
-  for (auto i = 0; i < 4; i++) { processors[i].printData(); }
-  std::cout << "totalTime,"
-            << std::ranges::max_element(processors,
-                                        [](const Processor& p1, const Processor& p2) {
-                                          return p1.monitor.executionCycleCount < p2.monitor.executionCycleCount;
-                                        })
-                   ->monitor.executionCycleCount
-            << std::endl;
-
-  std::cout << "privateDataAccessCount,sharedDataAccessCount,numberOfInvalidationsOrUpdates,trafficData" << std::endl;
-  std::cout << bus->monitor.privateAccessCount << "," << bus->monitor.sharedAccessCount << ","
-            << bus->monitor.numOfInvalidationsOrUpdates << "," << bus->monitor.trafficData << std::endl;
 }
 }// namespace CacheSim

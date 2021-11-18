@@ -30,8 +30,6 @@ class Processor {
   void fetchInstruction();
   void block(uint32_t blockedCycles);
 
-  void printData() const;
-
   [[nodiscard]] inline bool isBlocked() const { return blockedFor > 0; }
 
  private:
