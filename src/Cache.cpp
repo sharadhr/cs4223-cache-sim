@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
+#include <vector>
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
@@ -124,7 +126,9 @@ void Cache::updateLineForBlock(uint32_t blockNum, State state) {
   if (!containsBlockSus(blockNum))
     throw std::domain_error("Update on nonexistent blockNum: " + std::to_string(blockNum));
   auto setIndex = blockNum % numSets;
-  auto way = getBlockWaySus(blockNum);
+  auto way = getBlockWay(blockNum);
+
+  way = way == UINT32_MAX ? getBlockWaySus(blockNum) : way;
 
   store[setIndex][way].state = state;
 
@@ -146,7 +150,10 @@ void Cache::removeLineForBlock(uint32_t blockNum) {
 #endif
 
   auto setIndex = blockNum % numSets;
-  auto way = getBlockWaySus(blockNum);
+
+  auto way = getBlockWay(blockNum);
+
+  way = way == UINT32_MAX ? getBlockWaySus(blockNum) : way;
 
   auto line = store[setIndex][way];
 
