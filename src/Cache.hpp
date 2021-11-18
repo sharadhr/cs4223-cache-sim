@@ -31,16 +31,14 @@ class CacheLine {
 
  private:
   CacheState state{CacheState::INVALID};
-  uint32_t blockNum{UINT32_MAX};
+  uint32_t blockNum{};
   uint32_t address{};
-  bool isEmpty{true};
 
   CacheLine() : state(CacheState::INVALID) {}
   CacheLine(CacheState state, uint32_t address, uint32_t blockNum) :
       state(state),
       blockNum(blockNum),
-      address(address),
-      isEmpty(false) {}
+      address(address) {}
 
   friend class Cache;
 };
@@ -63,6 +61,7 @@ class Cache {
     store = std::vector(numSets, std::vector(associativity, CacheLine()));
   }
 
+  void printStateOfBlock(uint32_t blockNum);
   bool needsEvictionFor(uint32_t incomingAddress);
   bool needsWriteBack(uint32_t incomingAddress);
   uint32_t evictedBlockFor(uint32_t incomingAddress);
