@@ -64,3 +64,9 @@ _deps
 
 # End of https://www.toptal.com/developers/gitignore/api/cmake,c++
 .vimspector.json
+
+# LaTeX build files
+*.aux
+*.log
+*.synctex.gz
+*.toc

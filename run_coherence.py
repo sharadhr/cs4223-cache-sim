@@ -39,15 +39,15 @@ def coherence_worker(config: dict):
 # Output directory for cache writing
 results_output_dir = ". /output/results"
 # Possible options for cache configuration
-cache_types = ["Dragon", "MOESI"]
+cache_types = ["Dragon"]
 # Possible benchmarks
 benchmarks = ["bodytrack", "blackscholes", "fluidanimate"]
 # Cache size; minimum: 16 B (4 words); maximum: 512 MB
 cache_size = [2 ** i for i in range(4, 30)]
 # Associativity: direct-mapped to maximum possible
 associativity = [2 ** i for i in range(0, 30)]
-# Cache line/block size: minimum: 4 words (16 B); maximum: 256 words (1024 B = 1 KiB)
-line_size = [2 ** i for i in range(4, 11)]
+# Cache line/block size: minimum: 4 words (16 B); maximum: 1024 words (4096 B = 1 KiB)
+line_size = [2 ** i for i in range(4, 12)]
 
 # coherence CSV headers for corresponding resources
 option_names = [
@@ -73,7 +73,7 @@ configs = [dict(zip(option_names, cycle(vals))) for vals in product(*all_options
 # Filter configurations so only valid ones pass through
 configs = [setup for setup in configs if
            (setup["cache_size"] >= setup["line_size"]) and (
-                   setup["cache_size"] / setup["line_size"] % setup["associativity"] == 0)]
+                   setup["cache_size"] // setup["line_size"] % setup["associativity"] == 0)]
 config_permutations = DataFrame(configs)
 
 # Run the parallel workers

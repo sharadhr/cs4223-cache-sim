@@ -18,7 +18,7 @@ void Cache::lruShuffle(uint32_t address) {
   currentSet.push_back(line);
 }
 
-uint8_t Cache::getBlockWay(uint32_t blockNum) {
+uint32_t Cache::getBlockWay(uint32_t blockNum) {
   auto currentSet = setOfBlock(blockNum);
 
   auto way = std::distance(currentSet.begin(),
@@ -26,17 +26,17 @@ uint8_t Cache::getBlockWay(uint32_t blockNum) {
                              return line.state != State::INVALID && line.blockNum == blockNum;
                            }));
 
-  return static_cast<uint8_t>(0 <= way && way < associativity ? way : UINT8_MAX);
+  return static_cast<uint32_t>(0 <= way && way < associativity ? way : UINT32_MAX);
 }
 
-uint8_t Cache::getBlockWaySus(uint32_t blockNum) {
+uint32_t Cache::getBlockWaySus(uint32_t blockNum) {
   auto currentSet = setOfBlock(blockNum);
 
   auto way = std::distance(currentSet.begin(),
                            std::find_if(currentSet.begin(), currentSet.end(),
                                         [&blockNum](const CacheLine& line) { return line.blockNum == blockNum; }));
 
-  return static_cast<uint8_t>(0 <= way && way < associativity ? way : UINT8_MAX);
+  return static_cast<uint32_t>(0 <= way && way < associativity ? way : UINT32_MAX);
 }
 
 bool Cache::containsAddress(uint32_t address) {
@@ -52,7 +52,7 @@ bool Cache::containsBlock(uint32_t blockNum) {
   });
 }
 
-bool Cache::containsBlockSus(uint32_t blockNum) { return getBlockWaySus(blockNum) != UINT8_MAX; }
+bool Cache::containsBlockSus(uint32_t blockNum) { return getBlockWaySus(blockNum) != UINT32_MAX; }
 
 bool Cache::needsEvictionFor(uint32_t incomingAddress) {
   auto setIndex = setIndexFromAddress(incomingAddress);
@@ -154,6 +154,6 @@ State Cache::getState(uint32_t address) {
 State Cache::getStateOfBlock(uint32_t blockNum) {
   auto setIndex = blockNum % numSets;
   auto way = getBlockWay(blockNum);
-  return way == UINT8_MAX ? State::INVALID : store[setIndex][way].state;
+  return way == UINT32_MAX ? State::INVALID : store[setIndex][way].state;
 }
 }// namespace CacheSim

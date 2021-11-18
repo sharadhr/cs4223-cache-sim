@@ -31,7 +31,7 @@ class CacheLine {
 
  private:
   CacheState state{CacheState::INVALID};
-  uint32_t blockNum{};
+  uint32_t blockNum{UINT32_MAX};
   uint32_t address{};
 
   CacheLine() : state(CacheState::INVALID) {}
@@ -50,8 +50,10 @@ class Cache {
   uint8_t pid{};
   CacheOp blockingOperation{CacheOp::PR_NULL};
 
+  void throwErrorIfSameBlockNum(uint32_t blockNum);
+
   Cache() = default;
-  Cache(uint8_t pid, uint8_t associativity, uint32_t numBlocks, uint16_t blockSize) :
+  Cache(uint8_t pid, uint32_t associativity, uint32_t numBlocks, uint16_t blockSize) :
       pid(pid),
       blockSize(blockSize),
       numSets(numBlocks / associativity),
@@ -78,11 +80,11 @@ class Cache {
  private:
   uint16_t blockSize{32};
   uint32_t numSets{1};
-  uint8_t associativity{2};
+  uint32_t associativity{2};
   std::vector<std::vector<CacheLine>> store;
 
-  uint8_t getBlockWay(uint32_t blockNum);
-  uint8_t getBlockWaySus(uint32_t blockNum);
+  uint32_t getBlockWay(uint32_t blockNum);
+  uint32_t getBlockWaySus(uint32_t blockNum);
   bool containsBlockSus(uint32_t blockNum);
 
   [[nodiscard]] inline std::vector<CacheLine>& setOfBlock(uint32_t blockNum) { return store[blockNum % numSets]; }

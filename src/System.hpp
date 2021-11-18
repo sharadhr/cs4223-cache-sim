@@ -11,7 +11,7 @@ namespace CacheSim {
 class System {
  public:
   System() = default;
-  System(const std::filesystem::path& benchmark, std::string_view protocol, uint8_t associativity, uint32_t numBlocks,
+  System(const std::filesystem::path& benchmark, std::string_view protocol, uint32_t associativity, uint32_t numBlocks,
          uint16_t blockSize);
   void run();
 

@@ -22,7 +22,7 @@ Runner::Arguments::Arguments(const char* argv[]) :
     protocol(argv[1]),
     benchmark(std::filesystem::path("data") / argv[2]),
     cacheSize(static_cast<uint32_t>(std::stoul(argv[3]))),
-    associativity(static_cast<uint8_t>(std::stoul(argv[4]))),
+    associativity(static_cast<uint32_t>(std::stoul(argv[4]))),
     blockSize(static_cast<uint16_t>(std::stoul(argv[5]))),
     numBlocks(cacheSize / blockSize) {}
 

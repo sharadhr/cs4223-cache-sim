@@ -10,7 +10,7 @@
 namespace CacheSim {
 using Type = CacheSim::Instruction::InstructionType;
 
-System::System(const std::filesystem::path& benchmark, std::string_view protocol, uint8_t associativity,
+System::System(const std::filesystem::path& benchmark, std::string_view protocol, uint32_t associativity,
                uint32_t numBlocks, uint16_t blockSize) {
   uint8_t pid = 0;
   for (auto& processor : processors) {
