@@ -220,8 +220,7 @@ int main(int argc, const char* argv[]) {
     std::cout << buffer.view() << std::endl;
     return 0;
   } catch (const std::exception& e) {
-    std::cout << buffer.view() << std::endl;
-    std::cerr << "\x1b[91m" << e.what() << "\x1b[0m" << std::endl;
+    std::cerr << "\x1b[91m" << buffer.view() << e.what() << "\x1b[0m" << std::endl;
     return 1;
   }
 }
