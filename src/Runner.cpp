@@ -1,6 +1,7 @@
 #include "Runner.hpp"
 
 #include <iostream>
+#include <regex>
 
 namespace CacheSim {
 
@@ -62,39 +63,45 @@ Runner::Arguments Runner::checkArguments(int argc, const char* argv[]) {
 }
 
 void Runner::printConfig() const {
-  std::stringstream ss;
-  ss << "====================================" << '\n';
-  ss << "Cache protocol:\t\t" << args.protocol << '\n';
-  ss << "Cache size:\t\t" << args.cacheSize << " B";
+  std::ostringstream config;
+
+  std::ostringstream KiBMiB;
+
+  KiBMiB << std::setprecision(4);
 
   if (args.cacheSize > (1 << 20))
-    ss << " (" << std::setprecision(4) << static_cast<double>(args.cacheSize) / (1 << 20) << " MiB)";
+    KiBMiB << " (" << std::setprecision(4) << static_cast<double>(args.cacheSize) / (1 << 20) << " MiB)";
   else if (args.cacheSize > (1 << 10))
-    ss << " (" << std::setprecision(4) << static_cast<double>(args.cacheSize) / (1 << 10) << " KiB)";
-  ss << '\n';
+    KiBMiB << " (" << std::setprecision(4) << static_cast<double>(args.cacheSize) / (1 << 10) << " KiB)";
 
-  ss << "Block size:\t\t" << args.blockSize << " B" << std::endl;
+  auto KiBMiBString = KiBMiB.str();
 
-  ss << std::setw(20) << "Associativity:";
+  config << std::setfill('=') << std::setw(40) << '\n' << std::setfill(' ');
+  config << std::left << std::setw(15) << "Cache protocol:" << std::right << std::setw(25)
+         << std::string(args.protocol) + "\n";
+  config << std::left << std::setw(15) << "Cache size:" << std::right << std::setw(25)
+         << std::to_string(args.cacheSize) + " B" + KiBMiBString + '\n';
 
-  if (args.associativity == 1) ss << "direct-mapped";
-  else if (args.associativity == args.numBlocks) ss << "fully associative";
-  else ss << std::to_string(args.associativity) << "-way set-associative";
+  config << std::left << std::setw(15) << "Block size:" << std::right << std::setw(25)
+         << std::to_string(args.blockSize) + " B\n";
 
-  ss << "\n";
+  config << std::left << std::setw(15) << "Associativity:";
+  if (args.associativity == 1) config << std::right << std::setw(25) << "direct-mapped\n";
+  else if (args.associativity == args.numBlocks) config << std::right << std::setw(25) << "fully associative\n";
+  else config << std::right << std::setw(25) << std::to_string(args.associativity) + "-way set-associative\n";
 
-  ss << std::setw(20) << "Cache blocks:" << args.numBlocks << " (" << (args.numBlocks / args.associativity)
-     << " per set)" << '\n';
-  ss << "====================================";
+  config << std::left << std::setw(15) << "Cache blocks:" << std::right << std::setw(25)
+         << std::to_string(args.numBlocks) + " (" + std::to_string(args.numBlocks / args.associativity) + " per set)\n";
+  config << std::setfill('=') << std::setw(40) << '\n' << std::setfill(' ');
 
-  std::cout << ss.view() << std::endl;
+  std::cout << config.view() << std::endl;
 }
 
 void Runner::printStats() {
   auto coreMonitors = simSystem.coreMonitors();
   auto busMonitor = simSystem.busMonitor();
 
-  std::stringstream header;
+  std::ostringstream header;
 
   header << std::left << std::setw(3) << pid_s << std::right << std::setw(exec_s.length() + 4) << exec_s
          << std::setw(comp_s.length() + 4) << comp_s << std::setw(idle_s.length() + 4) << idle_s
@@ -106,7 +113,7 @@ void Runner::printStats() {
   std::cout << "\x1b[91m" << header.view() << "\x1b[0m" << '\n';
 
   auto pid = 0u;
-  std::stringstream coreStats;
+  std::ostringstream coreStats;
 
   for (const auto& monitor : coreMonitors) {
     coreStats << std::left << std::setw(3) << pid << std::right << std::setw(exec_s.length() + 4) << monitor.cycleCount
@@ -115,26 +122,34 @@ void Runner::printStats() {
               << std::setw(stor_s.length() + 5) << monitor.storeCount << std::setw(hitc_s.length() + 4)
               << monitor.hitCount << std::setw(misc_s.length() + 4) << monitor.missCount
               << std::setw(misr_s.length() + 4) << std::setprecision(5)
-              << static_cast<double>(monitor.missCount * 100) / (monitor.missCount + monitor.hitCount)
+              << std::to_string(static_cast<double>(monitor.missCount * 100) / (monitor.missCount + monitor.hitCount))
+            + "%"
               << std::setw(prvt_s.length() + 4) << busMonitor.privateAccessCount[pid] << std::setw(shrd_s.length() + 4)
               << busMonitor.sharedAccessCount[pid] << std::setw(ptrt_s.length() + 4) << std::setprecision(5)
-              << static_cast<double>(busMonitor.privateAccessCount[pid] * 100)
-            / (busMonitor.privateAccessCount[pid] + busMonitor.sharedAccessCount[pid++])
+              << std::to_string(static_cast<double>(busMonitor.privateAccessCount[pid] * 100)
+                                / (busMonitor.privateAccessCount[pid] + busMonitor.sharedAccessCount[pid++]))
+            + "%"
               << '\n';
   }
 
   std::cout << coreStats.view() << std::endl;
 
+  std::ostringstream busStats;
   auto max = std::ranges::max(coreMonitors, {}, &CoreMonitor::cycleCount);
-  std::cout << std::left << std::setw(20) << "Overall cycles:" << std::right << std::setw(12) << max.cycleCount << '\n';
-  std::cout << std::left << std::setw(20) << "Bus traffic (B):" << std::right << std::setw(12) << busMonitor.dataTraffic
-            << '\n';
-  std::cout << std::left << std::setw(20) << "Invalidations:" << std::right << std::setw(12)
-            << busMonitor.invalidationsCount << '\n';
-  std::cout << std::left << std::setw(20) << "Updates:" << std::right << std::setw(12) << busMonitor.updatesCount
-            << '\n';
-  std::cout << std::left << std::setw(20) << "Writes back:" << std::right << std::setw(12) << busMonitor.writesbackCount
-            << std::endl;
+
+  busStats << std::setfill('=') << std::setw(29) << '\n' << std::setfill(' ');
+  busStats << std::left << std::setw(16) << "Overall cycles:" << std::right << std::setw(12) << max.cycleCount << '\n';
+  busStats << std::left << std::setw(16) << "Bus traffic (B):" << std::right << std::setw(12) << busMonitor.dataTraffic
+           << '\n';
+  busStats << std::left << std::setw(16) << "Invalidations:" << std::right << std::setw(12)
+           << busMonitor.invalidationsCount << '\n';
+  busStats << std::left << std::setw(16) << "Updates:" << std::right << std::setw(12) << busMonitor.updatesCount
+           << '\n';
+  busStats << std::left << std::setw(16) << "Writes back:" << std::right << std::setw(12) << busMonitor.writesbackCount
+           << '\n';
+  busStats << std::setfill('=') << std::setw(29) << '\n' << std::setfill(' ');
+
+  std::cout << busStats.view() << std::endl;
 }
 
 void Runner::writeToFile() {
@@ -143,7 +158,8 @@ void Runner::writeToFile() {
 
   std::filesystem::path outputFilePath("output");
 
-  outputFilePath /= args.benchmark;
+  auto benchmarkName = std::regex_replace(args.benchmark.string(), std::regex("data/"), "");
+  outputFilePath /= benchmarkName;
   outputFilePath += '_';
   outputFilePath += args.protocol;
   outputFilePath += '_';
@@ -153,8 +169,6 @@ void Runner::writeToFile() {
   outputFilePath += '_';
   outputFilePath += std::to_string(args.blockSize);
   outputFilePath.replace_extension("csv");
-
-  std::filesystem::create_directories(outputFilePath);
 
   std::ofstream outputFile{outputFilePath};
 
@@ -166,10 +180,10 @@ void Runner::writeToFile() {
     outputFile << pid << ',' << monitor.cycleCount << ',' << monitor.computeCycleCount << ',' << monitor.idleCycleCount
                << ',' << monitor.loadCount << ',' << monitor.storeCount << ',' << monitor.hitCount << ','
                << monitor.missCount << ',' << std::setprecision(7)
-               << static_cast<double>(monitor.missCount * 100) / (monitor.missCount + monitor.hitCount) << ','
-               << busMonitor.privateAccessCount[pid] << ',' << busMonitor.sharedAccessCount[pid]
-               << std::setw(ptrt_s.length() + 4) << std::setprecision(7)
-               << static_cast<double>(busMonitor.privateAccessCount[pid] * 100)
+               << static_cast<double>(monitor.missCount) / (monitor.missCount + monitor.hitCount) << ','
+               << busMonitor.privateAccessCount[pid] << ',' << busMonitor.sharedAccessCount[pid] << ','
+               << std::setprecision(7)
+               << static_cast<double>(busMonitor.privateAccessCount[pid])
             / (busMonitor.privateAccessCount[pid] + busMonitor.sharedAccessCount[pid++])
                << '\n';
   }

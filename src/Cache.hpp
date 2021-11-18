@@ -37,8 +37,8 @@ class CacheLine {
   CacheLine() : state(CacheState::INVALID) {}
   CacheLine(CacheState state, uint32_t address, uint32_t blockNum) :
       state(state),
-      address(address),
-      blockNum(blockNum) {}
+      blockNum(blockNum),
+      address(address) {}
 
   friend class Cache;
 };

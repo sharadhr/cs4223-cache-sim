@@ -34,8 +34,10 @@ void Processor::fetchInstruction() {
     switch (blockingInstruction.type) {
       case Instruction::InstructionType::LD:
         ++monitor.loadCount;
+        break;
       case Instruction::InstructionType::ST:
         ++monitor.storeCount;
+        break;
       case Instruction::InstructionType::ALU:
       case Instruction::InstructionType::DONE:
         break;
