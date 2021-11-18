@@ -1,6 +1,7 @@
 #include "Cache.hpp"
 
 #include <algorithm>
+#include <cstdio>
 #include <stdexcept>
 #include <string>
 
@@ -93,8 +94,11 @@ void Cache::insertLine(uint32_t address, State state) {
   auto blockNum = address / blockSize;
   auto setIndex = setIndexFromAddress(address);
 
-  if (store[setIndex][0].state != State::INVALID)
-    throw std::domain_error("Eviction didnt happen: " + std::to_string(address));
+  if (store[setIndex][0].state != State::INVALID) {
+    char buffer[11];
+    std::snprintf(buffer, sizeof(buffer), "%#010x", address);
+    throw std::domain_error("Eviction didn't happen: " + std::string(buffer));
+  }
 
   store[setIndex].erase(store[setIndex].begin());
   store[setIndex].push_back(CacheLine(state, address, blockNum));
