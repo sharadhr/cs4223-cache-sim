@@ -39,10 +39,10 @@ def coherence_worker(config: dict):
 # Output directory for cache writing
 results_output_dir = ". /output/results"
 # Possible options for cache configuration
-cache_types = ["MESI", "Dragon", "MOESI"]
+cache_types = ["Dragon", "MOESI"]
 # Possible benchmarks
 benchmarks = ["bodytrack", "blackscholes", "fluidanimate"]
-# Cache size; minimum: 4 B (1 word); maximum: 512 MB
+# Cache size; minimum: 16 B (4 words); maximum: 512 MB
 cache_size = [2 ** i for i in range(4, 30)]
 # Associativity: direct-mapped to maximum possible
 associativity = [2 ** i for i in range(0, 30)]
@@ -82,6 +82,6 @@ if debugger_is_active():
     coherence_worker(config_permutations.iloc[0].to_dict())
 else:
     # Run mode: run in parallel
-    parallel_wrapper(coherence_worker, cpu_count() // 2)(
+    parallel_wrapper(coherence_worker, cpu_count())(
         config_permutations.to_dict("records")
     )

@@ -8,8 +8,6 @@
 
 namespace CacheSim {
 void Processor::refresh() {
-  ++cycleCount;
-
   switch (blockingInstruction.type) {
     case Type::LD:
     case Type::ST:
@@ -21,6 +19,7 @@ void Processor::refresh() {
     case Type::DONE:
       return;
   }
+  ++cycleCount;
 
   if (blockedFor > 0) --blockedFor;
 }
