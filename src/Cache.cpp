@@ -15,7 +15,9 @@ void Cache::lruShuffle(uint32_t address) {
 #endif
 
   auto& currentSet = setOfBlock(blockNum);
-  auto way = getBlockWaySus(blockNum);
+  auto way = getBlockWay(blockNum);
+
+  way = way == UINT32_MAX ? getBlockWaySus(blockNum) : way;
 
   auto line = currentSet[way];
   currentSet.erase(currentSet.begin() + way);
