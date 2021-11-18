@@ -27,9 +27,9 @@ class Runner {
   Arguments args;
 
   static Arguments checkArguments(int argc, const char* argv[]);
-  void printConfig() const;
+  std::string printConfig() const;
   auto start();
-  void printStats();
+  std::string printStats();
   void writeToFile();
 
   explicit Runner(Arguments arguments);

@@ -62,7 +62,7 @@ Runner::Arguments Runner::checkArguments(int argc, const char* argv[]) {
   return arguments;
 }
 
-void Runner::printConfig() const {
+std::string Runner::printConfig() const {
   std::ostringstream config;
 
   std::ostringstream KiBMiB;
@@ -94,23 +94,29 @@ void Runner::printConfig() const {
          << std::to_string(args.numBlocks) + " (" + std::to_string(args.numBlocks / args.associativity) + " per set)\n";
   config << std::setfill('=') << std::setw(40) << '\n' << std::setfill(' ');
 
+#ifndef NDEBUG
   std::cout << config.view() << std::endl;
+#endif
+  config << std::endl;
+  return config.str();
 }
 
-void Runner::printStats() {
+std::string Runner::printStats() {
   auto coreMonitors = simSystem.coreMonitors();
   auto busMonitor = simSystem.busMonitor();
 
   std::ostringstream header;
-
+  header << "\x1b[94m";
   header << std::left << std::setw(3) << pid_s << std::right << std::setw(exec_s.length() + 4) << exec_s
          << std::setw(comp_s.length() + 4) << comp_s << std::setw(idle_s.length() + 4) << idle_s
          << std::setw(load_s.length() + 6) << load_s << std::setw(stor_s.length() + 5) << stor_s
          << std::setw(hitc_s.length() + 4) << hitc_s << std::setw(misc_s.length() + 4) << misc_s
          << std::setw(misr_s.length() + 4) << misr_s << std::setw(prvt_s.length() + 4) << prvt_s
-         << std::setw(shrd_s.length() + 4) << shrd_s << std::setw(ptrt_s.length() + 4) << ptrt_s;
+         << std::setw(shrd_s.length() + 4) << shrd_s << std::setw(ptrt_s.length() + 4) << ptrt_s << "\x1b[0m\n";
 
-  std::cout << "\x1b[91m" << header.view() << "\x1b[0m" << '\n';
+#ifndef NDEBUG
+  std::cout << header.view() << std::flush;
+#endif
 
   auto pid = 0u;
   std::ostringstream coreStats;
@@ -133,7 +139,9 @@ void Runner::printStats() {
     ++pid;
   }
 
+#ifndef NDEBUG
   std::cout << coreStats.view() << std::endl;
+#endif
 
   std::ostringstream busStats;
   auto max = std::ranges::max(coreMonitors, {}, &CoreMonitor::cycleCount);
@@ -150,7 +158,11 @@ void Runner::printStats() {
            << '\n';
   busStats << std::setfill('=') << std::setw(29) << '\n' << std::setfill(' ');
 
+#ifndef NDEBUG
   std::cout << busStats.view() << std::endl;
+#endif
+  header << coreStats.view() << std::endl << busStats.view();
+  return header.str();
 }
 
 void Runner::writeToFile() {
@@ -172,7 +184,7 @@ void Runner::writeToFile() {
   outputFilePath += std::to_string(args.blockSize);
   outputFilePath.replace_extension("csv");
 
-  std::ofstream outputFile{outputFilePath.string(), std::ofstream::out | std::ofstream::app};
+  std::ofstream outputFile{outputFilePath};
 
   outputFile << pid_s << ',' << exec_s << ',' << comp_s << ',' << idle_s << ',' << load_s << ',' << stor_s << ','
              << hitc_s << ',' << misc_s << ',' << misr_s << ',' << prvt_s << ',' << shrd_s << ',' << ptrt_s << '\n';
@@ -198,15 +210,18 @@ auto Runner::start() { simSystem.run(); }
 }// namespace CacheSim
 
 int main(int argc, const char* argv[]) {
+  std::ostringstream buffer;
   try {
     CacheSim::Runner runner{CacheSim::Runner::checkArguments(argc, argv)};
-    runner.printConfig();
+    buffer << runner.printConfig();
     runner.start();
-    runner.printStats();
+    buffer << runner.printStats();
     runner.writeToFile();
+    std::cout << buffer.view() << std::endl;
     return 0;
   } catch (const std::exception& e) {
-    std::cerr << e.what() << std::endl;
+    std::cout << buffer.view() << std::endl;
+    std::cerr << "\x1b[91m" << e.what() << "\x1b[0m" << std::endl;
     return 1;
   }
 }
