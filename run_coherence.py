@@ -39,7 +39,7 @@ def coherence_worker(config: dict):
 # Output directory for cache writing
 results_output_dir = ". /output/results"
 # Possible options for cache configuration
-cache_types = ["Dragon"]
+cache_types = ["MESI", "Dragon", "MOESI"]
 # Possible benchmarks
 benchmarks = ["bodytrack", "blackscholes", "fluidanimate"]
 # Cache size; minimum: 16 B (4 words); maximum: 512 MB

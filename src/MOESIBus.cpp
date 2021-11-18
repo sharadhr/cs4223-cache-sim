@@ -6,7 +6,7 @@
 
 namespace CacheSim {
 uint32_t MOESIBus::getBlockedCycles(CacheOp cacheOp, uint32_t address, [[maybe_unused]] uint8_t drop_pid) {
-  if (cacheOp != CacheOp::PR_NULL) updateDataAccessCount(0, address);
+  if (cacheOp != CacheOp::PR_NULL) updateDataAccessCount(drop_pid, address);
   switch (cacheOp) {
     case CacheOp::PR_WB:
     case CacheOp::PR_NULL:

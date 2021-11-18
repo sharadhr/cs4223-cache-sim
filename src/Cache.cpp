@@ -1,9 +1,11 @@
 #include "Cache.hpp"
 
 #include <algorithm>
-#include <cstdio>
 #include <stdexcept>
 #include <string>
+#ifndef NDEBUG
+#include <cstdio>
+#endif
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
