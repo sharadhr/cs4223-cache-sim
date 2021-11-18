@@ -127,9 +127,10 @@ void Runner::printStats() {
               << std::setw(prvt_s.length() + 4) << busMonitor.privateAccessCount[pid] << std::setw(shrd_s.length() + 4)
               << busMonitor.sharedAccessCount[pid] << std::setw(ptrt_s.length() + 4) << std::setprecision(5)
               << std::to_string(static_cast<double>(busMonitor.privateAccessCount[pid] * 100)
-                                / (busMonitor.privateAccessCount[pid] + busMonitor.sharedAccessCount[pid++]))
+                                / (busMonitor.privateAccessCount[pid] + busMonitor.sharedAccessCount[pid]))
             + "%"
               << '\n';
+    ++pid;
   }
 
   std::cout << coreStats.view() << std::endl;
@@ -157,6 +158,7 @@ void Runner::writeToFile() {
   auto busMonitor = simSystem.busMonitor();
 
   std::filesystem::path outputFilePath("output");
+  if (!std::filesystem::exists(outputFilePath)) std::filesystem::create_directories(outputFilePath);
 
   auto benchmarkName = std::regex_replace(args.benchmark.string(), std::regex("data/"), "");
   outputFilePath /= benchmarkName;
@@ -170,7 +172,7 @@ void Runner::writeToFile() {
   outputFilePath += std::to_string(args.blockSize);
   outputFilePath.replace_extension("csv");
 
-  std::ofstream outputFile{outputFilePath};
+  std::ofstream outputFile{outputFilePath.string(), std::ofstream::out | std::ofstream::app};
 
   outputFile << pid_s << ',' << exec_s << ',' << comp_s << ',' << idle_s << ',' << load_s << ',' << stor_s << ','
              << hitc_s << ',' << misc_s << ',' << misr_s << ',' << prvt_s << ',' << shrd_s << ',' << ptrt_s << '\n';
@@ -184,8 +186,9 @@ void Runner::writeToFile() {
                << busMonitor.privateAccessCount[pid] << ',' << busMonitor.sharedAccessCount[pid] << ','
                << std::setprecision(7)
                << static_cast<double>(busMonitor.privateAccessCount[pid])
-            / (busMonitor.privateAccessCount[pid] + busMonitor.sharedAccessCount[pid++])
+            / (busMonitor.privateAccessCount[pid] + busMonitor.sharedAccessCount[pid])
                << '\n';
+    ++pid;
   }
   outputFile.close();
 }
