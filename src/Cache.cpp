@@ -4,10 +4,12 @@
 #include <cstdio>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
   auto blockNum = address / blockSize;
+  throwErrorIfSameBlockNum(blockNum);
   if (!containsBlockSus(blockNum))
     throw std::domain_error("Shuffle on nonexistent address: " + std::to_string(address));
   auto& currentSet = setOfBlock(blockNum);
@@ -16,6 +18,7 @@ void Cache::lruShuffle(uint32_t address) {
   auto line = currentSet[way];
   currentSet.erase(currentSet.begin() + way);
   currentSet.push_back(line);
+  throwErrorIfSameBlockNum(blockNum);
 }
 
 uint8_t Cache::getBlockWay(uint32_t blockNum) {
@@ -90,8 +93,24 @@ void Cache::setCacheOpFor(const Type& type, uint32_t address) {
   }
 }
 
+void Cache::throwErrorIfSameBlockNum(uint32_t blockNum) {
+  int setIndex = blockNum % numSets;
+
+  std::unordered_set<long> visited;
+  for (auto line : store[setIndex]) {
+    if (line.isEmpty) { continue; }
+    if (visited.find(line.blockNum) != visited.end()) {
+      throw std::domain_error("Duplicate found " + std::to_string(line.blockNum));
+    }
+    visited.insert(line.blockNum);
+  }
+}
+
 void Cache::insertLine(uint32_t address, State state) {
   auto blockNum = address / blockSize;
+
+  throwErrorIfSameBlockNum(blockNum);
+
   auto setIndex = setIndexFromAddress(address);
 
   if (store[setIndex][0].state != State::INVALID) {
@@ -105,6 +124,7 @@ void Cache::insertLine(uint32_t address, State state) {
 
   if (store[setIndex].size() != associativity)
     throw std::domain_error("InsertLine broke set: " + std::to_string(setIndex));
+  throwErrorIfSameBlockNum(blockNum);
 }
 
 void Cache::updateLine(uint32_t address, State state) {
@@ -113,6 +133,7 @@ void Cache::updateLine(uint32_t address, State state) {
 }
 
 void Cache::updateLineForBlock(uint32_t blockNum, State state) {
+  throwErrorIfSameBlockNum(blockNum);
   if (!containsBlockSus(blockNum))
     throw std::domain_error("Update on nonexistent blockNum: " + std::to_string(blockNum));
   auto setIndex = blockNum % numSets;
@@ -122,6 +143,7 @@ void Cache::updateLineForBlock(uint32_t blockNum, State state) {
 
   if (store[setIndex].size() != associativity)
     throw std::domain_error("UpdateLine broke set: " + std::to_string(setIndex));
+  throwErrorIfSameBlockNum(blockNum);
 }
 
 void Cache::removeLine(uint32_t address) {
@@ -130,6 +152,7 @@ void Cache::removeLine(uint32_t address) {
 }
 
 void Cache::removeLineForBlock(uint32_t blockNum) {
+  throwErrorIfSameBlockNum(blockNum);
   if (!containsBlockSus(blockNum))
     throw std::domain_error("Update on nonexistent blockNum: " + std::to_string(blockNum));
 
@@ -144,6 +167,7 @@ void Cache::removeLineForBlock(uint32_t blockNum) {
 
   if (store[setIndex].size() != associativity)
     throw std::domain_error("RemoveLine broke set: " + std::to_string(setIndex));
+  throwErrorIfSameBlockNum(blockNum);
 }
 
 State Cache::getState(uint32_t address) {

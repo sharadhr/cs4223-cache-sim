@@ -31,14 +31,16 @@ class CacheLine {
 
  private:
   CacheState state{CacheState::INVALID};
-  uint32_t blockNum{};
+  uint32_t blockNum{UINT32_MAX};
   uint32_t address{};
+  bool isEmpty{true};
 
   CacheLine() : state(CacheState::INVALID) {}
   CacheLine(CacheState state, uint32_t address, uint32_t blockNum) :
       state(state),
       blockNum(blockNum),
-      address(address) {}
+      address(address),
+      isEmpty(false) {}
 
   friend class Cache;
 };
@@ -49,6 +51,8 @@ class Cache {
  public:
   uint8_t pid{};
   CacheOp blockingOperation{CacheOp::PR_NULL};
+
+  void throwErrorIfSameBlockNum(uint32_t blockNum);
 
   Cache() = default;
   Cache(uint8_t pid, uint8_t associativity, uint32_t numBlocks, uint16_t blockSize) :
