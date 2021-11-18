@@ -4,8 +4,6 @@
 #include <cstdio>
 #include <stdexcept>
 #include <string>
-#include <unordered_set>
-#include <vector>
 
 namespace CacheSim {
 void Cache::lruShuffle(uint32_t address) {
