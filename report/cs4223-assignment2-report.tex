@@ -1,0 +1,472 @@
+\documentclass[date,tikzlibs,lmodern,10pt]{epreport}
+
+\module{CS4223 Multi-Core Architectures}
+\title{Quad-core Cache Simulator with MESI, Dragon, and MOESI Coherence Protocols}
+\author{Sharadh Rajaraman (\texttt{A0189906L}) \\ Mohamed Yousuf Minhaj Zia (\texttt{A0XXXXXXB})}
+\date{\today}
+
+\newacronym{cmp}{CMP}{chip multiprocessor}
+\newacronym{amd}{AMD}{Advanced Micro Devices}
+
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+In a bid to accelerate and exploit certain properties of their workloads, modern computers have evolved several different levels of parallelism---instruction, thread, data and task, loop, etc.
+One implementation of task-level parallelism is multi-core processing, where \emph{one} processor chip contains several different execution units, or \emph{cores}.
+These multi-core processors are also called \glspl{cmp}.
+
+The memory hierarchy model used in classical single-core systems may be extended straightforwardly to \glspl{cmp}, with the processor itself having several \emph{levels} of cache, each larger and slower than the previous.
+As always, the \emph{nearest} cache level separates the instruction and data cache.
+For instance, \cref{fig:xeon-lstopo} depicts the cache layout for a recent notebook Intel Xeon processor.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.8\columnwidth]{images/lstopo.pdf}
+	\caption{\texttt{lstopo --no-io} output for 8-core, 16-thread Intel\textsuperscript\textregistered{} Xeon\textsuperscript\textregistered{} W-11955M processor}\label{fig:xeon-lstopo}
+\end{figure}
+
+Given the separation of the cores, the problem of \emph{coherence} is encountered: how are accesses (either reads or writes) by one core seen by the others?
+These require \emph{coherence protocols}, which dictate the movement and broadcast of accesses from one core to all others.
+There are two broad categories of coherence protocols: \emph{snooping}, or \emph{bus-based}, and \emph{directory-based}.
+The focus of this experiment will be simulating three snooping protocols: MESI, Dragon, and MOESI, and analysing their performance.
+
+\subsection{Snooping Coherence Protocols}
+In snooping protocols, memory accesses by every core are \emph{broadcasted} into a bus.
+The cache controllers of all other cores \emph{snoop} on or \emph{listen} to this bus, and change the states of their caches appropriately.
+Furthermore, in update-based protocols like Dragon, the bus also provides inter-cache lines, along which updated data may be transmitted.
+Each protocol tested in this assignment has different characteristics and optimises for different use-cases (writeback-heavy, inter-cache transfer-heavy).
+
+\subsubsection{MESI Protocol}
+MESI is an invalidation-based protocol, containing four states: \textbf{M}odified, \textbf{E}xclusive, \textbf{S}hared, and \textbf{I}nvalid. There are no cache-cache transfers.
+As such, all misses for a block are facilitated by accessing the main memory.
+A cache accessing a block in the \textbf{M} state in some other cache would have to wait for the latter cache to write back that block to memory, and incur an additional wait penalty.
+
+\begin{figure}[htbp]
+	\centering
+	\begin{tikzpicture}
+		\node[state,initial]	(I) {I};
+		\node[state]	(S) [above=2cm of I] {S};
+		\node[state]	(E) [above=2cm of S] {E};
+		\node[state]	(M) [above=2cm of E] {M};
+		\tikzset{font=\scriptsize}
+		\path[->] (I) edge [bend left=45] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{PrRd/-}\\\texttt{BusRd(S)}} (S)
+		edge [bend left=70] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{PrRd/-}\\\texttt{BusRd(S)}} (E)
+		edge [bend left=80] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{PrWr/-}\\\texttt{BusRdX}} (M)
+		%
+		(S) edge [loop below] node[rounded corners=3pt,align=center] {\texttt{PrRd/-}} ()
+		edge [bend left=60] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{PrWr/-}\\\texttt{BusRdX}} (M)
+		edge[dotted] [bend left=45] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{BusRdX/}\\\texttt{Flush}} (I)
+		%
+		(E) edge [loop below] node[rounded corners=3pt,align=center] {\texttt{PrRd/-}} ()
+		edge [bend left=45] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{PrWr/-}\\\texttt{BusRdX}} (M)
+		edge[dotted] [bend left=45] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{BusRd/-}} (S)
+		edge[dotted] [bend left=60] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{BusRdX/Flush}} (I)
+		%
+		(M) edge [loop below] node[rounded corners=3pt,align=center] {\texttt{PrRd/-}\\\texttt{PrWr/-}} ()
+		edge[dotted] [bend left=60] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{BusRd/Flush}} (S)
+		edge[dotted] [bend left=80] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{BusRdX/Flush}} (I);
+	\end{tikzpicture}
+	\caption{MESI protocol states and transitions}\label{fig:mesi-graph}
+\end{figure}
+
+\begin{table}[htbp]
+	\centering\begin{tabular}{r|cccc}
+		           & \textbf{M}                  & \textbf{E}                  & \textbf{S}                  & \textbf{I}                  \\ \hline
+		\textbf{M} & \textcolor{red}{\xmark{}}   & \textcolor{red}{\xmark{}}   & \textcolor{red}{\xmark{}}   & \textcolor{green}{\cmark{}} \\
+		\textbf{E} & \textcolor{red}{\xmark{}}   & \textcolor{red}{\xmark{}}   & \textcolor{red}{\xmark{}}   & \textcolor{green}{\cmark{}} \\
+		\textbf{S} & \textcolor{red}{\xmark{}}   & \textcolor{red}{\xmark{}}   & \textcolor{green}{\cmark{}} & \textcolor{green}{\cmark{}} \\
+		\textbf{I} & \textcolor{green}{\cmark{}} & \textcolor{green}{\cmark{}} & \textcolor{green}{\cmark{}} & \textcolor{green}{\cmark{}}
+	\end{tabular}
+	\caption{Permitted cache states }
+	\label{tab:mesi-table}
+\end{table}
+
+\cref{fig:mesi-graph} shows the MESI state transition diagram, and \cref{tab:mesi-table} shows valid states between a given pair of cache lines mapping to the same memory block.
+
+\subsubsection{Dragon Protocol}
+Dragon is an update-based protocol that drastically improves on MESI, by allowing inter-cache transfers.
+There are four states: \textbf{E}xclusive, \textbf{S}hared \textbf{c}lean, \textbf{S}hared \textbf{m}odified, and \textbf{M}odified.
+\cref{fig:dragon-graph} depicts the state transitions of the Dragon protocol.
+Note that we have additionally implemented the \textbf{I}nvalid state, to represent a clean cache with \emph{no} data whatsoever.
+
+Furthermore, \cref{tab:dragon-table} shows valid states between a given pair of caches mapping to the same memory block, under the Dragon protocol.
+
+\begin{figure}[htbp]
+	\centering
+	\begin{tikzpicture}% function%\begin{}[]%\\addplot {};%\\end{}%\\end{
+		\node[state,initial]	(I) {I};
+		\node[state]	(E) [above right=2cm of I] {E};
+		\node[state]	(Sm) [below right=2cm of I] {Sm};
+		\node[state]	(Sc) [right=4cm of E] {Sc};
+		\node[state]	(M) [right=4cm of Sm] {M};s
+		\tikzset{font=\scriptsize}
+		\path[->] (I) edge node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{PrRdMiss}/\\\texttt{BusRd(S')}} (E)
+		edge node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{PrWrMiss}/\\\texttt{BusRd(S')}} (Sm)
+		edge[bend left=100] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{PrRdMiss}/\texttt{BusRd(S)}} (Sc)
+		edge[bend right=100] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{PrWrMiss}/\texttt{BusRd(S')}} (M)
+		%
+		(E) edge node[rounded corners=3pt,align=center,fill=white] {\texttt{BusRd/-}} (Sc)
+		edge node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{PrWr/-}} (M)
+		%
+		(Sc) edge [loop right] node[rounded corners=3pt,align=center] {\texttt{PrRd/-}\\\texttt{BusRd/-}\\\texttt{BusUpd/update}} ()
+		edge node[rounded corners=3pt,align=center,fill=white] {\texttt{PrWr/}\\\texttt{BusUpd(S')}} (M);
+		% edge [bend left=60] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{PrWr/-}\\\texttt{BusRdX}} (M)
+		% edge[dotted] [bend left=45] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{BusRdX/}\\\texttt{Flush}} (I)
+		% %
+		% (M) edge [loop below] node[rounded corners=3pt,align=center] {\texttt{PrRd/-}\\\texttt{PrWr/-}} ()
+		% edge[dotted] [bend left=60] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{BusRd/Flush}} (S)
+		% edge[dotted] [bend left=80] node[rounded corners=3pt,inner sep=1.5pt,fill=white,align=center] {\texttt{BusRdX/Flush}} (I);
+	\end{tikzpicture}
+	\caption{Dragon protocol states and transitions}
+	\label{fig:dragon-graph}
+\end{figure}
+
+\begin{table}[htbp]
+	\centering\begin{tabular}{r|cccc}
+		            & \textbf{E}                  & \textbf{Sc}                 & \textbf{Sm}                 & \textbf{M}                  \\ \hline
+		\textbf{E}  & \textcolor{red}{\xmark{}}   & \textcolor{red}{\xmark{}}   & \textcolor{red}{\xmark{}}   & \textcolor{green}{\xmark{}} \\
+		\textbf{Sc} & \textcolor{red}{\xmark{}}   & \textcolor{red}{\cmark{}}   & \textcolor{red}{\cmark{}}   & \textcolor{green}{\xmark{}} \\
+		\textbf{Sm} & \textcolor{red}{\xmark{}}   & \textcolor{red}{\cmark{}}   & \textcolor{green}{\xmark{}} & \textcolor{green}{\xmark{}} \\
+		\textbf{M}  & \textcolor{green}{\xmark{}} & \textcolor{green}{\xmark{}} & \textcolor{green}{\xmark{}} & \textcolor{green}{\xmark{}}
+	\end{tabular}
+	\caption{Permitted cache states for MESI}
+	\label{tab:dragon-table}
+\end{table}
+
+\subsubsection{MOESI Protocol}
+
+\section{Experimental Design}
+\subsection{Programming Language and Build Tools}
+Based on our own programming experiences, we had the choices of \Cpp{} and \Cs{}. We chose \Cpp{20} because it allowed us access to several functional libraries like \texttt{<ranges>}.
+We also selected it for its speed, given that truly large cache sizes might have needed to be simulated.
+Indeed, several configurations of the benchmark took nearly two hours to complete, which might have been far slower had we used \Cs{}.
+
+We also used CMake as a build-generator, so that cross-platform programming could be easily done.
+CLion and \texttt{nvim} were used across Windows and Linux to develop the simulator.
+
+\subsection{Design Abstractions and Implementation}
+We have chosen an object-oriented design for the simulator, with each component focused on one task.
+
+\subsubsection{Overall System Design}
+The \texttt{Runner} class is responsible for accepting input from the command-line, parsing and validating said input, and forwarding it to the \texttt{System} class.
+\texttt{Runner} also collects data from the \texttt{CoreMonitor}s and the \texttt{BusMonitor}, prints them to \texttt{stdout} and writes to a \texttt{.csv} file for data analysis.
+As such, \texttt{Runner} also contains \texttt{int main()}.
+
+\texttt{System} contains an array of four \texttt{Processor}s, as well as a `smart pointer' (specifically, \texttt{std::unique\textunderscore{}ptr}) to a \texttt{Bus} (or more specifically, one of its derived classes).
+Each \texttt{Processor} contains another smart pointer to a \texttt{Cache}, whose ownership is shared by the \texttt{Bus}, so that the latter may update the caches upon any transition being triggered.
+
+\subsubsection{Input Parsing and Validation}
+We first check that the number of arguments to the program is correct;
+
+\subsubsection{The \texttt{System} Class}
+\texttt{System::run()} is the main entry point for the
+
+\subsubsection{The \texttt{Processor} Class}
+\subsubsection{The \texttt{Bus} Class and Derived Classes}
+the different protocols implemented as \texttt{MESIBus}, \texttt{DragonBus}, and \texttt{MOESIBus}, which all inherit from a base class, \texttt{Bus}.
+This allowed the rest of the components to be agnostic to the currently-running protocol.
+We were also able to easily extract out common functionality for the caches, and
+\section{Results and Analysis}
+
+\ref{legend}
+
+For all the following graphs, we will use the legend above.
+
+\subsection{Cache Size}
+\begin{figure}[htbp]
+	\centering
+	\begin{tikzpicture}
+		\pgfplotsset{width=6cm,}
+		\begin{axis}[
+				xmode=log,log basis x={2},ymode=log,
+				title=\texttt{blackscholes},
+				legend columns=-1,
+				legend entries={MESI, Dragon, MOESI},
+				legend style={/tikz/every even column/.append style={column sep=0.5cm}},
+				legend to name=legend,
+				x tick style={black, thin},
+				y tick style={black, thin},
+				ticklabel style={font=\footnotesize},
+				ymax=1,
+				xlabel={Cache size (\si{\byte})},ylabel={Miss rate},
+			]
+			\addplot[blue,only marks,mark=triangle,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_cache_size_blackscholes_MESI.csv' u 15:9;
+				};
+			\addplot[opacity=0.5,red,only marks,mark=x,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_cache_size_blackscholes_Dragon.csv' u 15:9;
+				};
+			\addplot[opacity=0.4,fill=green,only marks,mark=*,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_cache_size_blackscholes_MOESI.csv' u 15:9;
+				};
+		\end{axis}
+	\end{tikzpicture}
+	\begin{tikzpicture}
+		\pgfplotsset{width=6cm,}
+		\begin{axis}[
+				xmode=log,log basis x={2},ymode=log,
+				title=\texttt{bodytrack},
+				legend columns=-1,
+				legend entries={MESI, Dragon, MOESI},
+				legend style={/tikz/every even column/.append style={column sep=0.5cm}},
+				legend to name=legend,
+				x tick style={black, thin},
+				y tick style={black, thin},
+				ticklabel style={font=\footnotesize},
+				ymax=1,
+				ytick={0.001,0.01,0.1,1},yticklabels={,,},
+				% scaled x ticks=base 2,
+				xlabel={Cache size (\si{\byte})},
+			]
+			\addplot[blue,only marks,mark=triangle,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_cache_size_bodytrack_MESI.csv' u 15:9;
+				};
+			\addplot[opacity=0.5,red,only marks,mark=x,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_cache_size_bodytrack_Dragon.csv' u 15:9;
+				};
+			\addplot[opacity=0.4,fill=green,only marks,mark=*,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_cache_size_bodytrack_MOESI.csv' u 15:9;
+				};
+		\end{axis}
+	\end{tikzpicture}
+	\begin{tikzpicture}
+		\pgfplotsset{width=6cm,}
+		\begin{axis}[
+				xmode=log,log basis x={2},ymode=log,
+				title=\texttt{fluidanimate},
+				legend columns=-1,
+				legend entries={MESI, Dragon, MOESI},
+				legend style={/tikz/every even column/.append style={column sep=0.5cm}},
+				legend to name=legend,
+				x tick style={black, thin},
+				y tick style={black, thin},
+				ticklabel style={font=\footnotesize},
+				ymax=1,
+				ytick={0.001,0.01,0.1,1},yticklabels={,,},
+				% scaled x ticks=base 2,
+				xlabel={Cache size (\si{\byte})},
+			]
+			\addplot[blue,only marks,mark=triangle,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_cache_size_fluidanimate_MESI.csv' u 15:9;
+				};
+			\addplot[opacity=0.5,red,only marks,mark=x,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_cache_size_fluidanimate_Dragon.csv' u 15:9;
+				};
+			\addplot[opacity=0.4,fill=green,only marks,mark=*,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_cache_size_fluidanimate_MOESI.csv' u 15:9;
+				};
+		\end{axis}
+	\end{tikzpicture}
+	\caption{Miss rate on cache size, with fixed block size (\SI{32}{\byte}) and 2-way set-associativity}\label{fig:miss_rate_cache_size}
+\end{figure}
+
+\subsection{Associativity}
+
+\begin{figure}[htbp]
+	\centering
+	\begin{tikzpicture}
+		\pgfplotsset{width=6cm,}
+		\begin{axis}[
+				xmode=log,log basis x={2},ymode=log,
+				title=\texttt{blackscholes},
+				legend columns=-1,
+				legend entries={MESI, Dragon, MOESI},
+				legend style={/tikz/every even column/.append style={column sep=0.5cm}},
+				legend to name=legend,
+				x tick style={black, thin},
+				y tick style={black, thin},
+				ticklabel style={font=\footnotesize},
+				ymax=0.1,
+				xlabel={Associativity},ylabel={Miss rate},
+			]
+			\addplot[blue,only marks,mark=triangle,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_associativity_blackscholes_MESI.csv' u 16:9;
+				};
+			\addplot[opacity=0.5,red,only marks,mark=x,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_associativity_blackscholes_Dragon.csv' u 16:9;
+				};
+			\addplot[opacity=0.4,fill=green,only marks,mark=*,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_associativity_blackscholes_MOESI.csv' u 16:9;
+				};
+		\end{axis}
+	\end{tikzpicture}
+	\begin{tikzpicture}
+		\pgfplotsset{width=6cm,}
+		\begin{axis}[
+				xmode=log,log basis x={2},ymode=log,
+				title=\texttt{bodytrack},
+				legend columns=-1,
+				legend entries={MESI, Dragon, MOESI},
+				legend style={/tikz/every even column/.append style={column sep=0.5cm}},
+				legend to name=legend,
+				x tick style={black, thin},
+				y tick style={black, thin},
+				ticklabel style={font=\footnotesize},
+				ymax=0.1,
+				ytick={0.001,0.01,0.1,1},yticklabels={,,},
+				xlabel={Associativity},
+			]
+			\addplot[blue,only marks,mark=triangle,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_associativity_bodytrack_MESI.csv' u 16:9;
+				};
+			\addplot[opacity=0.5,red,only marks,mark=x,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_associativity_bodytrack_Dragon.csv' u 16:9;
+				};
+			\addplot[opacity=0.4,fill=green,only marks,mark=*,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_associativity_bodytrack_MOESI.csv' u 16:9;
+				};
+		\end{axis}
+	\end{tikzpicture}
+	\begin{tikzpicture}
+		\pgfplotsset{width=6cm,}
+		\begin{axis}[
+				xmode=log,log basis x={2},ymode=log,
+				title=\texttt{fluidanimate},
+				legend columns=-1,
+				legend entries={MESI, Dragon, MOESI},
+				legend style={/tikz/every even column/.append style={column sep=0.5cm}},
+				legend to name=legend,
+				x tick style={black, thin},
+				y tick style={black, thin},
+				ticklabel style={font=\footnotesize},
+				ymax=0.1,
+				ytick={0.001,0.01,0.1,1},yticklabels={,,},
+				xlabel={Associativity},
+			]
+			\addplot[blue,only marks,mark=triangle,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_associativity_fluidanimate_MESI.csv' u 16:9;
+				};
+			\addplot[opacity=0.5,red,only marks,mark=x,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_associativity_fluidanimate_Dragon.csv' u 16:9;
+				};
+			\addplot[opacity=0.4,fill=green,only marks,mark=*,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_associativity_fluidanimate_MOESI.csv' u 16:9;
+				};
+		\end{axis}
+	\end{tikzpicture}
+	\caption{Miss rate on associativity with fixed cache size (\SI{4}{\kibi\byte}) and fixed block size (\SI{32}{\byte})}\label{fig:miss_rate_associativity}
+\end{figure}
+
+\subsection{Block Size}
+
+\begin{figure}[htbp]
+	\centering
+	\begin{tikzpicture}
+		\pgfplotsset{width=6cm,}
+		\begin{axis}[
+				xmode=log,log basis x={2},ymode=log,
+				title=\texttt{blackscholes},
+				legend columns=-1,
+				legend entries={MESI, Dragon, MOESI},
+				legend style={/tikz/every even column/.append style={column sep=0.5cm}},
+				legend to name=legend,
+				x tick style={black, thin},
+				y tick style={black, thin},
+				ticklabel style={font=\footnotesize},
+				ymax=0.1,
+				xlabel={Block size (\si{\byte})},ylabel={Miss rate},
+			]
+			\addplot[blue,only marks,mark=triangle,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_line_size_blackscholes_MESI.csv' u 17:9;
+				};
+			\addplot[opacity=0.5,red,only marks,mark=x,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_line_size_blackscholes_Dragon.csv' u 17:9;
+				};
+			\addplot[opacity=0.4,fill=green,only marks,mark=*,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_line_size_blackscholes_MOESI.csv' u 17:9;
+				};
+		\end{axis}
+	\end{tikzpicture}
+	\begin{tikzpicture}
+		\pgfplotsset{width=6cm,}
+		\begin{axis}[
+				xmode=log,log basis x={2},ymode=log,
+				title=\texttt{bodytrack},
+				legend columns=-1,
+				legend entries={MESI, Dragon, MOESI},
+				legend style={/tikz/every even column/.append style={column sep=0.5cm}},
+				legend to name=legend,
+				x tick style={black, thin},
+				y tick style={black, thin},
+				ticklabel style={font=\footnotesize},
+				ymax=0.1,
+				ytick={0.001,0.01,0.1,1},yticklabels={,,},
+				xlabel={Block size (\si{\byte})},
+			]
+			\addplot[blue,only marks,mark=triangle,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_line_size_bodytrack_MESI.csv' u 17:9;
+				};
+			\addplot[opacity=0.5,red,only marks,mark=x,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_line_size_bodytrack_Dragon.csv' u 17:9;
+				};
+			\addplot[opacity=0.4,fill=green,only marks,mark=*,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_line_size_bodytrack_MOESI.csv' u 17:9;
+				};
+		\end{axis}
+	\end{tikzpicture}
+	\begin{tikzpicture}
+		\pgfplotsset{width=6cm,}
+		\begin{axis}[
+				xmode=log,log basis x={2},ymode=log,
+				title=\texttt{fluidanimate},
+				legend columns=-1,
+				legend entries={MESI, Dragon, MOESI},
+				legend style={/tikz/every even column/.append style={column sep=0.5cm}},
+				legend to name=legend,
+				x tick style={black, thin},
+				y tick style={black, thin},
+				ticklabel style={font=\footnotesize},
+				ymax=0.1,
+				ytick={0.001,0.01,0.1,1},yticklabels={,,},
+				xlabel={Block size (\si{\byte})},
+			]
+			\addplot[blue,only marks,mark=triangle,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_line_size_fluidanimate_MESI.csv' u 17:9;
+				};
+			\addplot[opacity=0.7,red,only marks,mark=x,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_line_size_fluidanimate_Dragon.csv' u 17:9;
+				};
+			\addplot[opacity=0.8,fill=green,only marks,mark=*,] gnuplot[raw gnuplot]{
+					set datafile separator ',';
+					plot 'csvs/miss_rate_line_size_fluidanimate_MOESI.csv' u 17:9;
+				};
+		\end{axis}
+	\end{tikzpicture}
+	\caption{Miss rate on cache line size with fixed cache size (\SI{128}{\kibi\byte}) and 2-way set-associativity}\label{fig:miss_rate_line_size}
+\end{figure}
+
+\section{Conclusion}
+\end{document}

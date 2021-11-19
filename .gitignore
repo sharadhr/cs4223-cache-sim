@@ -72,3 +72,7 @@ _deps
 *.log
 *.synctex.gz
 *.toc
+**/*.auxlock
+**/*.md5
+**/*.dpth
+**/*.dep
